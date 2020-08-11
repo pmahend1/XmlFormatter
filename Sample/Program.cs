@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
 
@@ -12,11 +11,10 @@ namespace XmlFormatter
 
         private static void Main(string[] args)
         {
-
             var content = File.ReadAllText(@"Sample.xml");
             var temp = new Formatter().Format(content);
 
-             Console.WriteLine(temp);
+            Console.WriteLine(temp);
             //new Formatter().FormatWithReader(new StringReader(content));
             //old way
 
@@ -24,9 +22,13 @@ namespace XmlFormatter
             //XmlDocument xmlDocument = new XmlDocument();
             //xmlDocument.LoadXml(content);
             //var sb = new StringBuilder();
-            //using (XmlWriter writer = XmlWriter.Create(sb, new XmlWriterSettings { 
-            //Indent= true,
-            //NewLineOnAttributes = true,
+            //XmlReaderSettings settings = new XmlReaderSettings();
+            //settings.DtdProcessing = DtdProcessing.Parse;
+            //using (XmlWriter writer = XmlWriter.Create(sb, new XmlWriterSettings
+            //{
+            //    Indent = true,
+            //    NewLineOnAttributes = true,
+
             //}))
             //{
             //    xmlDocument.WriteTo(writer);
@@ -70,7 +72,6 @@ namespace XmlFormatter
         {
             //identity if comment
 
-
             if (node.NodeType == XmlNodeType.Comment)
             {
                 sb.Append(new string(' ', firstLength) + "<!-- " + node.Value + " -->");
@@ -81,40 +82,58 @@ namespace XmlFormatter
             {
                 case XmlNodeType.None:
                     break;
+
                 case XmlNodeType.Element:
                     break;
+
                 case XmlNodeType.Attribute:
                     break;
+
                 case XmlNodeType.Text:
                     break;
+
                 case XmlNodeType.CDATA:
                     break;
+
                 case XmlNodeType.EntityReference:
                     break;
+
                 case XmlNodeType.Entity:
                     break;
+
                 case XmlNodeType.ProcessingInstruction:
                     break;
+
                 case XmlNodeType.Comment:
                     break;
+
                 case XmlNodeType.Document:
                     break;
+
                 case XmlNodeType.DocumentType:
                     break;
+
                 case XmlNodeType.DocumentFragment:
                     break;
+
                 case XmlNodeType.Notation:
                     break;
+
                 case XmlNodeType.Whitespace:
                     break;
+
                 case XmlNodeType.SignificantWhitespace:
                     break;
+
                 case XmlNodeType.EndElement:
                     break;
+
                 case XmlNodeType.EndEntity:
                     break;
+
                 case XmlNodeType.XmlDeclaration:
                     break;
+
                 default:
                     break;
             }
@@ -154,7 +173,7 @@ namespace XmlFormatter
                     var currentSpace = firstLength;
                     PrintNode(node.ChildNodes[j], sb);
                     //close tag
-                    if(node.ChildNodes[j].NodeType !=  XmlNodeType.Comment)
+                    if (node.ChildNodes[j].NodeType != XmlNodeType.Comment)
                         sb.Append("\n" + new string(' ', currentSpace) + SymbolConstants.EndTagStart + node.ChildNodes[j].Name + ">");
                 }
             }

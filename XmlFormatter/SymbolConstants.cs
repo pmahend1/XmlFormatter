@@ -21,14 +21,17 @@ namespace XmlFormatter
         public const string CommentTagEnd = "-->";
 
         public const string AssignmentStart = @"=""";
-        
+
         public const string AssignmentEnd = @"""";
 
         public const string CDataStart = "<![CDATA[";
 
         public const string CDataEnd = "]]>";
 
-        public static readonly string Newline = Environment.NewLine;
+        public const string DocTypeStart = "<!DOCTYPE";
 
+        public static string DocTypeEnd(string val) => string.Format("[{0}]", val);
+
+        public static readonly string Newline = Environment.NewLine;
     }
 }
