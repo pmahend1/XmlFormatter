@@ -12,6 +12,8 @@ namespace XmlFormatter
 
         public const string EndTagEnd = ">";
 
+        public const string InlineEndTag = "/>";
+
         public static readonly char Space = ' ';
 
         public const string CommentTagStart = "<!--";
@@ -21,6 +23,10 @@ namespace XmlFormatter
         public const string AssignmentStart = @"=""";
         
         public const string AssignmentEnd = @"""";
+
+        public const string CDataStart = "<![CDATA[";
+
+        public const string CDataEnd = "]]>";
 
         public static readonly string Newline = Environment.NewLine;
 

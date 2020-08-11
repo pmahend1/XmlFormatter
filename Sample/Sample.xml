@@ -11,5 +11,26 @@
            HorizontalOptions="Center"
            VerticalOptions="CenterAndExpand">
     </Label>
+    <documentfragment>doc</documentfragment>
+    <![CDATA[Within this Character Data block I can
+use double dashes as much as I want (along with <, &, ', and ")
+*and* %MyParamEntity; will be expanded to the text
+"Has been expanded" ... however, I can't use
+the CEND sequence. If I need to use CEND I must escape one of the
+brackets or the greater-than sign using concatenated CDATA sections.
+]]>
+    <Label Text="Blh"
+           HorizontalOptions="Center"
+           VerticalOptions="CenterAndExpand"/>      <!--Comment 2-->
+    <Items>
+      <Item>Test with an entity: 2</Item>
+      <Item>
+        Test with a child element <more/> stuff
+      </Item>
+      <Item>Test with a CDATA section <![CDATA[<456>]]> def</Item>
+      <Item>Test with a char entity: &#65;</Item>
+      <!-- Fourteen chars in this element.-->
+      <Item>1234567890ABCD</Item>
+    </Items>
   </StackLayout>
 </ContentPage>

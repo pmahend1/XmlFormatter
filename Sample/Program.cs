@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
@@ -11,44 +12,28 @@ namespace XmlFormatter
 
         private static void Main(string[] args)
         {
-            var xmlString = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<ContentPage xmlns=""http://xamarin.com/schemas/2014/forms""
-xmlns:x=""http://schemas.microsoft.com/winfx/2009/xaml""
-       xmlns:d=""http://xamarin.com/schemas/2014/forms/design""
-             xmlns:mc=""http://schemas.openxmlformats.org/markup-compatibility/2006""
-             mc:Ignorable=""d""
-             x:Class=""App9.MainPage"">
 
-    <StackLayout>
-        <!-- Place new controls here -->
-        <Label Text=""Welcome to Xamarin.Forms!""
-           HorizontalOptions=""Center""
-           VerticalOptions=""CenterAndExpand"" />
-    </StackLayout>
+            var content = File.ReadAllText(@"Sample.xml");
+            var temp = new Formatter().Format(content);
 
-</ContentPage>";
-
-
-            var temp = new Formatter().Format(xmlString);
-
-            Console.WriteLine(temp);
-
+             Console.WriteLine(temp);
+            //new Formatter().FormatWithReader(new StringReader(content));
             //old way
 
-            Console.WriteLine("Old way");
-            XmlDocument xmlDocument = new XmlDocument();
-            xmlDocument.LoadXml(xmlString);
-            var sb = new StringBuilder();
-            using (XmlWriter writer = XmlWriter.Create(sb, new XmlWriterSettings { 
-            Indent= true,
-            NewLineOnAttributes = true,
-            }))
-            {
-                xmlDocument.WriteTo(writer);
-                writer.Close();
+            //Console.WriteLine("Old way");
+            //XmlDocument xmlDocument = new XmlDocument();
+            //xmlDocument.LoadXml(content);
+            //var sb = new StringBuilder();
+            //using (XmlWriter writer = XmlWriter.Create(sb, new XmlWriterSettings { 
+            //Indent= true,
+            //NewLineOnAttributes = true,
+            //}))
+            //{
+            //    xmlDocument.WriteTo(writer);
+            //    writer.Close();
 
-            }
-            Console.WriteLine(sb.ToString()); ;
+            //}
+            //Console.WriteLine(sb.ToString()); ;
         }
 
         static public string Beautify(XmlDocument doc)
