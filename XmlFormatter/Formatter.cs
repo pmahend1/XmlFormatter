@@ -114,8 +114,7 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.CDATA:
-                    sb.Append(new string(SymbolConstants.Space, currentStartLength)
-                        + SymbolConstants.CDataStart
+                    sb.Append(SymbolConstants.CDataStart
                         + node.Value
                         + SymbolConstants.CDataEnd);
                     return;
@@ -225,7 +224,8 @@ namespace XmlFormatter
                     var currentChild = node.ChildNodes[j];
                     if (currentChild.NodeType == XmlNodeType.CDATA)
                         currentStartLength -= 2;
-                    if (currentChild.NodeType != XmlNodeType.Text)
+                    if (currentChild.NodeType != XmlNodeType.Text 
+                        && currentChild.NodeType !=XmlNodeType.CDATA)
                         sb.Append(SymbolConstants.Newline);
                     if (currentChild.NodeType == XmlNodeType.DocumentFragment)
                         Debug.WriteLine("Document fragment found");
