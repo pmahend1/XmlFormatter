@@ -24,8 +24,8 @@ namespace XmlFormatter
 
         public string Format(string inputString)
         {
-            var xml = ConvertToXMLDocument(inputString);
-            var formattedXML = FormatXMLDocument(xml);
+            var xmlDocument = ConvertToXMLDocument(inputString);
+            var formattedXML = FormatXMLDocument(xmlDocument);
             return formattedXML;
         }
 
@@ -205,6 +205,28 @@ namespace XmlFormatter
             }
 
             return;
+        }
+
+        public string Beautify(string xmlString)
+        {
+            var xmlDoc = ConvertToXMLDocument(xmlString);
+            StringBuilder sb = new StringBuilder();
+            XmlWriterSettings settings = new XmlWriterSettings
+            {
+                Indent = true,
+                IndentChars = new string(SymbolConstants.Space, 1),
+                NewLineChars = SymbolConstants.Newline,
+                NewLineHandling = NewLineHandling.Replace,
+                NewLineOnAttributes = true,
+                OmitXmlDeclaration = false,
+                NamespaceHandling = NamespaceHandling.OmitDuplicates,
+            };
+            using (XmlWriter writer = XmlWriter.Create(sb, settings))
+            {
+                xmlDoc.Save(writer);
+            }
+
+            return sb.ToString();
         }
     }
 }
