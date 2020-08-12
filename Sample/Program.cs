@@ -7,10 +7,13 @@ namespace XmlFormatter
     {
         public static void Main(string[] args)
         {
-            var xmlString = File.ReadAllText(@"Sample.xml");
+            var file = @"Sample.xml";
+            var xmlString = File.ReadAllText(file);
             var formatter = new Formatter();
 
-            Console.WriteLine(formatter.Format(xmlString));
+            var formattedText = formatter.Format(xmlString).Result;
+            Console.WriteLine(formatter.Format(xmlString).Result);
+            File.WriteAllText("Formatted_" + file, formattedText.ToString());
 
             //old way
             Console.WriteLine("--------Old Way------");
