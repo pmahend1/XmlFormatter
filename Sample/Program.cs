@@ -7,7 +7,7 @@ namespace XmlFormatter
     {
         public static void Main(string[] args)
         {
-            var file = @"Sample.xml";
+            var file = @"XMLFile3.xml";
             var xmlString = File.ReadAllText(file);
             var formatter = new Formatter();
 

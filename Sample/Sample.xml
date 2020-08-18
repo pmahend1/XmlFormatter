@@ -11,8 +11,7 @@
            HorizontalOptions="Center"
            VerticalOptions="CenterAndExpand">
     </Label>
-    <documentfragment>doc</documentfragment>
-    <![CDATA[Within this Character Data block I can
+    <documentfragment>doc</documentfragment><![CDATA[Within this Character Data block I can
 use double dashes as much as I want (along with <, &, ', and ")
 *and* %MyParamEntity; will be expanded to the text
 "Has been expanded" ... however, I can't use
