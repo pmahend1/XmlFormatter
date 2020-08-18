@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,10 +41,9 @@ namespace XmlFormatter
                 lastNodeType = XmlNodeType.XmlDeclaration;
                 sb.Append(declaration.OuterXml + SymbolConstants.Newline);
             }
-            if(xml.DocumentType  != null)
+            if (xml.DocumentType != null)
             {
-                sb.Append(xml.DocumentType.OuterXml +SymbolConstants.Newline) ;
-
+                sb.Append(xml.DocumentType.OuterXml + SymbolConstants.Newline);
             }
             var root = xml.DocumentElement;
             lastNodeType = XmlNodeType.Document;
@@ -128,7 +126,7 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.Text:
-                   sb.Append(node.InnerText);
+                    sb.Append(node.OuterXml);
                     return;
 
                 case XmlNodeType.Whitespace:
@@ -165,7 +163,7 @@ namespace XmlFormatter
                         sb.Append(new string(SymbolConstants.Space, currentAttributeSpace));
                 }
             }
-            else if(!node.OuterXml.EndsWith("/>"))
+            else if (!node.OuterXml.EndsWith("/>"))
             {
                 sb.Append(SymbolConstants.StartTagEnd);
             }
@@ -173,7 +171,6 @@ namespace XmlFormatter
             //prints nodes
             if (node.HasChildNodes)
             {
-
                 int prevStartLength = currentStartLength;
                 if (!(node.ChildNodes.Cast<XmlNode>().First() is XmlText))
                 {
@@ -184,8 +181,6 @@ namespace XmlFormatter
                 for (int j = 0; j < node.ChildNodes.Count; j++)
                 {
                     var currentChild = node.ChildNodes[j];
-                    //if (currentChild.NodeType == XmlNodeType.CDATA)
-                    //    currentStartLength -= 2;
                     if (currentChild.NodeType != XmlNodeType.Text
                         && currentChild.NodeType != XmlNodeType.CDATA
                         && currentChild.NodeType != XmlNodeType.EntityReference
@@ -193,8 +188,6 @@ namespace XmlFormatter
                     {
                         sb.Append(SymbolConstants.Newline);
                     }
-
-
                     //
                     PrintNode(currentChild, sb);
                 }
@@ -205,8 +198,8 @@ namespace XmlFormatter
                     && node.NodeType != XmlNodeType.DocumentType
                     && node.NodeType != XmlNodeType.Text)
                 {
-                    if (currentStartLength >= 2 
-                        && lastNodeType != XmlNodeType.Text 
+                    if (currentStartLength >= 2
+                        && lastNodeType != XmlNodeType.Text
                         && lastNodeType != XmlNodeType.CDATA
                         && lastNodeType != XmlNodeType.DocumentType
                         && lastNodeType != XmlNodeType.EntityReference
@@ -214,10 +207,10 @@ namespace XmlFormatter
                     {
                         currentStartLength -= 2;
                     }
-                    var newLine = (lastNodeType != XmlNodeType.Text && 
+                    var newLine = (lastNodeType != XmlNodeType.Text &&
                         lastNodeType != XmlNodeType.CDATA
-                        && lastNodeType !=  XmlNodeType.EntityReference) ? Environment.NewLine : string.Empty;
-                    var spaces = (lastNodeType != XmlNodeType.Text && 
+                        && lastNodeType != XmlNodeType.EntityReference) ? Environment.NewLine : string.Empty;
+                    var spaces = (lastNodeType != XmlNodeType.Text &&
                         lastNodeType != XmlNodeType.EntityReference) ? new string(SymbolConstants.Space, currentStartLength) : string.Empty;
                     sb.Append(newLine
                       + spaces
@@ -225,8 +218,6 @@ namespace XmlFormatter
                       + node.Name
                       + SymbolConstants.EndTagEnd);
                     lastNodeType = node.NodeType;
-
-                    
                 }
 
                 Debug.WriteLine(node.Name + " with value " + node.Value);
