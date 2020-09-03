@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes"?>
+<CATALOG>
+  <IDENT>
+    <SENDER_ID>xxx</SENDER_ID>
+  </IDENT>
+  <ITEMS>
+    <ITEM ACTION="UPDATE">
+      <ITEM_NO>yyy</ITEM_NO>
+      <ITEM_NAME>Test &amp; &lt; Test</ITEM_NAME>
+    </ITEM>
+  </ITEMS>
+</CATALOG>
