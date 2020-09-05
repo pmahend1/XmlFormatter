@@ -2,6 +2,9 @@
 import * as fs from "fs";
 import * as xmljs from "xml-js";
 import * as sf from "typescript-string-operations";
+import { DOMParser } from 'xmldom'
+import { debuglog } from "util";
+//import * as xmldom from "xmldom";
 //#endregion
 
 //#region declarations
@@ -9,9 +12,10 @@ let content = "";
 let currentStartLength = 0;
 let currentAttributeSpace = 0;
 let lastNodeType = "";
+
 //#endregion
 
-fs.readFile("./SampleFiles/Sample.xml", function (err, data)
+fs.readFile("./SampleFiles/Sample2.xml", function (err, data)
 {
     if (err)
     {
@@ -22,102 +26,118 @@ fs.readFile("./SampleFiles/Sample.xml", function (err, data)
         content = data.toString();
 
         var convert = xmljs;
-        var result = convert.xml2json(content, { compact: false, spaces: 4 });
-        if (result)
+        //var result = convert.xml2json(content, { compact: false, spaces: 4 });
+        var dom = new DOMParser();
+        const doc = dom.parseFromString(content);
+        if (doc)
         {
-            var obj = JSON.parse(result);
-            var formatted = FormatXMLDocument(obj,4);
+            console.log(doc);
+
+
+            //var obj = JSON.parse(result);
+            var formatted = FormatXMLDocument(doc, 4);
             console.log(formatted);
+
         }
     }
 
 })
 
-function FormatXMLDocument(jsonObj: any, indentLength : number)
+function FormatXMLDocument(xmlDocument: any, indentLength: number)
 {
     var sb = new sf.StringBuilder();
-    var declaration = jsonObj["declaration"];
-    if (declaration)
-    {
-        var decAttr = declaration["attributes"];
 
-        sb.Append("<?xml ");
-        for (const [key, value] of Object.entries(decAttr))
-        {
-            sb.AppendFormat(`${key}="${value}"`);
-        }
-        sb.Append(`?>\n`);
-    }
-    // if (xml.DocumentType != null)
+    var first = xmlDocument.childNodes[0];
+    // var declaration = xmlDocument.
+    // if (declaration)
+    // {
+    //     var decAttr = declaration["attributes"];
+
+    //     sb.Append("<?xml ");
+    //     for (const [key, value] of Object.entries(decAttr))
+    //     {
+    //         sb.AppendFormat(`${key}="${value}"`);
+    //     }
+    //     sb.Append(`?>\n`);
+    // }
+    // if (xml.DocumentType !== null)
     // {
     //     sb.Append(xml.DocumentType.OuterXml + SymbolConstants.Newline);
     // }
-    var root = jsonObj["elements"][0];
-    lastNodeType = "document";
+    var root = xmlDocument.documentElement;
 
-    PrintNode(root, sb,indentLength);
+    console.log(root.documenttype);
+    lastNodeType = root.constructor.name;
+
+    PrintNode(root, sb, indentLength);
     return sb.ToString();
 }
 
 
-function PrintNode(node: any, sb: sf.StringBuilder, indentLength : number)
+function PrintNode(node: any, sb: sf.StringBuilder, indentLength: number)
 {
     var prevNode = lastNodeType;
-    lastNodeType = node["type"];
+    lastNodeType = node.constructor.name.toString();
     switch (lastNodeType)
     {
-        case "attribute":
-            break;
-        case "cdata":
-            var newLine = (prevNode == "text") ? sf.String.Empty : `\n`;
-            var spaces = (prevNode == "text") ? sf.String.Empty : " ".repeat(currentStartLength);
-            sb.AppendFormat(`${newLine}${spaces}<![CDATA[${node["cdata"]}]]>`)
+        case "Attr":
+            sb.AppendFormat(`${node.name}=${node.value}`);
             return;
-        case "comment":
-            sb.AppendFormat(`${" ".repeat(currentStartLength)}<!--${node["comment"]}-->`);
+        case "CDATASection":
+            var newLine = (prevNode === "Text") ? sf.String.Empty : `\n`;
+            var spaces = (prevNode === "Text") ? sf.String.Empty : " ".repeat(currentStartLength);
+            sb.AppendFormat(`${newLine}${spaces}<![CDATA[${node.nodeValue}]]>`)
             return;
-        case "documenttype":
+        case "Comment":
+            sb.AppendFormat(`${" ".repeat(currentStartLength)}<!--${node.nodeValue}-->`);
+            return;
+        case "DocumentType":
             //sb.Append(SymbolConstants.DocTypeStart + SymbolConstants.Space + SymbolConstants.DocTypeEnd(node.Value));
-            sb.AppendFormat(`<!DOCTYPE  [${node["document"]}]`);
+            sb.AppendFormat(`<!DOCTYPE  [${node.nodeValue}]`);
             return;
-        case "element":
+        case "Element":
             //Done
             break;
 
-        case "endelement":
+        case "EndElement":
             break;
 
-        case "endentity":
+        case "EndEntity":
             break;
 
-        case "entity":
+        case "Entity":
             break;
 
-        case "entityreference":
-            sb.Append(node[1]);
+        case "EntityReference":
+            sb.Append(node.nodeValue);
             return;
 
-        case "none":
+        case "None":
             break;
 
-        case "notation":
+        case "Notation":
             break;
 
-        case "processinginstruction":
-            sb.AppendFormat(`<?${node.Name} ${node.Value}?>`);
+        case "ProcessingInstruction":
+            sb.AppendFormat(`<?${node.nodeName} ${node.nodeValue}?>`);
             return;
 
-        case "significantwhitespace":
+        case "SignificantWhitespace":
             break;
 
-        case "text":
-            sb.Append(node["text"]);
+        case "Text":
+            const str: string = node.nodeValue;
+            if (!sf.String.IsNullOrWhiteSpace(str))
+            {
+                sb.Append(str);
+            }
+
             return;
 
-        case "whitespace":
+        case "Whitespace":
             break;
 
-        case "declaration":
+        case "Declaration":
             //done
             break;
 
@@ -126,90 +146,130 @@ function PrintNode(node: any, sb: sf.StringBuilder, indentLength : number)
     }
 
     //print start tag
-    var space = prevNode != "text" ? " ".repeat(currentStartLength) : sf.String.Empty;
-    sb.AppendFormat(`${space}<${node["name"]}`);
+    var space = lastNodeType ==="Element" && node.previousSibling.constructor.name !== "Text" ? " ".repeat(currentStartLength) : sf.String.Empty;
+    // var space = " ".repeat(currentStartLength);
+    sb.AppendFormat(`${space}<${node.nodeName}`);
 
     //print attributes
-    var attributes = node["attributes"];
-
+    var attributes: Attr[] = node.attributes;
+    var closed = false;
     if (attributes)
     {
-
-        sb.Append(" ");
-        var nodeName: string = node["name"];
-        currentAttributeSpace = nodeName.length + indentLength;
-        for (let i = 0; i < Object.keys(attributes).length; i++)
+        if (attributes.length > 0)
         {
-            const attributeName = Object.keys(attributes)[i];
-            const attributeValue = Object.values(attributes)[i];
-            var isLast = (i === Object.keys(attributes).length - 1);
-            var newLine = isLast ? sf.String.Empty : `\n`;
-            sb.AppendFormat(`${attributeName}="${attributeValue}"${newLine}`);
-            if (isLast && node["elements"])
-                sb.Append(">");
-            else if (!isLast)
-                sb.Append(" ".repeat(currentAttributeSpace));
+            sb.Append(" ");
+            var nodeName: string = node.nodeName;
+            currentAttributeSpace = currentStartLength + nodeName.length + 2;
+            for (let i = 0; i < attributes.length; i++)
+            {
+                //const attributeName = Object.keys(attributes)[i];
+                const attribute = attributes[i];
+
+                var isLast = (i === attributes.length - 1);
+                var newLine = isLast ? sf.String.Empty : `\n`;
+                sb.AppendFormat(`${attribute.name}="${attribute.value}"${newLine}`);
+                if (node.nodeName === "more")
+                {
+                    console.log("dil maange more");
+                }
+                if (isLast && node.childNodes !== null)
+                {
+                    closed = true;
+                    sb.Append(">");
+                }
+
+                else if (!isLast)
+                    sb.Append(" ".repeat(currentAttributeSpace));
+
+
+            }
         }
 
 
-    } else 
-    {
-        var values: any[] = Object.values(node);
-        var nodeValue: string = values[0];
-        if (!nodeValue.endsWith("/>"))
-        {
-            sb.Append(">");
-        }
 
     }
+    //if (!node.nodeValue?.endsWith("/>"))
+    // {
+
+    if (!closed)
+    {
+        sb.Append(">");
+    }
+
+
+    // }
+
+
+
 
     //print nodes
-    var childNodes: any[] = node["elements"];
+    var childNodes: Node[] = node.childNodes;
     if (childNodes)
     {
-        var prevStartLength = currentStartLength;
-        if (childNodes[0]["type"] != "text")
+        if (childNodes.length > 0)
         {
-            prevStartLength = currentStartLength;
-            currentStartLength += indentLength;
+            var prevStartLength = currentStartLength;
+            var yes = false;
+
+            for (let index = 0; index < childNodes.length; index++)
+            {
+                const element = childNodes[index];
+                if (element.constructor.name === "Element")
+                {
+                    yes = true;
+                    break;
+                }
+
+
+            }
+            if (lastNodeType == "Element" && yes)
+            {
+                prevStartLength = currentStartLength;
+                currentStartLength += indentLength;
+            }
+
+            for (let j = 0; j < childNodes.length; j++)
+            {
+                const currentChild = childNodes[j];
+                var nodeType: string = currentChild.constructor.name;
+                if (nodeType !== 'Text' && nodeType !== 'CDATASection' && nodeType !== 'EntityReference'
+                    && node.previousSibling.constructor.name !== 'Text'
+                )
+                {
+                    sb.Append("\n");
+                }
+                //
+                PrintNode(currentChild, sb, indentLength);
+            }
+            if (node.constructor.name !== "Comment"
+                && node.constructor.name !== "CDATASection"
+                && node.constructor.name !== "DocumentType"
+                && node.constructor.name !== "Text")
+            {
+                if (currentStartLength >= indentLength
+                    && lastNodeType !== "Text"
+                    && lastNodeType !== "CDATASection"
+                    && lastNodeType !== "DocumentType"
+                    && lastNodeType !== "EntityReference"
+                )
+                {
+                    currentStartLength -= indentLength;
+                }
+                var newLine = (lastNodeType !== "Text" &&
+                    lastNodeType !== "CDATASection"
+                    && lastNodeType !== "EntityReference") ? `\n` : sf.String.Empty;
+                var spaces = (lastNodeType !== "Text" && lastNodeType !== "EntityReference") ? " ".repeat(currentStartLength) : sf.String.Empty;
+                sb.Append(newLine
+                    + spaces
+                    + "</"
+                    + node.nodeName
+                    + ">");
+                lastNodeType = node.constructor.name;
+            }
+
         }
 
-        for (let j = 0; j < childNodes.length; j++)
-        {
-            const currentChild = childNodes[j];
-            if (currentChild["type"] != "text" && currentChild["type"] != "cdata" && currentChild["type"] != "entityreference" && lastNodeType != "text")
-            {
-                sb.Append(`\n`);
-            }
-            //
-            PrintNode(currentChild, sb,indentLength);
-        }
-        if (node.NodeType != "comment"
-            && node.NodeType != "cdata"
-            && node.NodeType != "documenttype"
-            && node.NodeType != "text")
-        {
-            if (currentStartLength >= indentLength
-                && lastNodeType != "text"
-                && lastNodeType != "cdata"
-                && lastNodeType != "documenttype"
-                && lastNodeType != "entityreference"
-            )
-            {
-                currentStartLength -= indentLength;
-            }
-            var newLine = (lastNodeType != "text" &&
-                lastNodeType != "cdata"
-                && lastNodeType != "entityreference") ? `\n` : sf.String.Empty;
-            var spaces = (lastNodeType != "text" &&
-                lastNodeType != "entityreference") ? " ".repeat(currentStartLength) : sf.String.Empty;
-            sb.Append(newLine
-                + spaces
-                + "</"
-                + node["name"]
-                + ">");
-            lastNodeType = node.NodeType;
-        }
+
     }
     //close tag after all child nodes
     else
@@ -218,5 +278,4 @@ function PrintNode(node: any, sb: sf.StringBuilder, indentLength : number)
     }
 
     return;
-
 }
