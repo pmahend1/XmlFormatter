@@ -2,7 +2,7 @@
 
 namespace XmlFormatter
 {
-    public static class SymbolConstants
+    public static class Constants
     {
         public const string StartTagStart = "<";
 
@@ -23,6 +23,10 @@ namespace XmlFormatter
         public const string AssignmentStart = @"=""";
 
         public const string AssignmentEnd = @"""";
+
+        public const string AssignmentStartSingleQuote = "='";
+
+        public const string AssignmentEndSingleQuote = "'";
 
         public const string CDataStart = "<![CDATA[";
 

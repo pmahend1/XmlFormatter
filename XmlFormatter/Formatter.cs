@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace XmlFormatter
@@ -15,6 +15,8 @@ namespace XmlFormatter
 
         private XmlNodeType lastNodeType;
 
+        private Options currentOptions = new Options { };
+
         private XmlDocument ConvertToXMLDocument(string input)
         {
             XmlDocument xml = new XmlDocument();
@@ -23,27 +25,43 @@ namespace XmlFormatter
             return xml;
         }
 
-        public Task<object> Format(string inputString)
+        public string Format(string input, Options formattingOptions = null)
         {
-            var xmlDocument = ConvertToXMLDocument(inputString);
-            var formattedXML = FormatXMLDocument(xmlDocument);
-            return Task.FromResult((object)formattedXML);
+            try
+            {
+                if (formattingOptions != null)
+                {
+                    currentOptions.IndentLength = formattingOptions.IndentLength;
+                    currentOptions.UseSelfClosingTags = formattingOptions.UseSelfClosingTags;
+                    currentOptions.UseSingleQuotes = formattingOptions.UseSingleQuotes;
+                }
+
+                var xmlDocument = ConvertToXMLDocument(input);
+                var formattedXML = FormatXMLDocument(xmlDocument);
+                return formattedXML;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.StackTrace);
+                throw ex;
+            }
         }
 
         private string FormatXMLDocument(XmlDocument xml)
         {
             StringBuilder sb = new StringBuilder();
+
             XmlDeclaration declaration = xml.ChildNodes
                                 .OfType<XmlDeclaration>()
                                 .FirstOrDefault();
             if (declaration != null)
             {
                 lastNodeType = XmlNodeType.XmlDeclaration;
-                sb.Append(declaration.OuterXml + SymbolConstants.Newline);
+                sb.Append(declaration.OuterXml + Constants.Newline);
             }
             if (xml.DocumentType != null)
             {
-                sb.Append(xml.DocumentType.OuterXml + SymbolConstants.Newline);
+                sb.Append(xml.DocumentType.OuterXml + Constants.Newline);
             }
             var root = xml.DocumentElement;
             lastNodeType = XmlNodeType.Document;
@@ -56,6 +74,7 @@ namespace XmlFormatter
         {
             var prevNode = lastNodeType;
             lastNodeType = node.NodeType;
+
             switch (node.NodeType)
             {
                 case XmlNodeType.Attribute:
@@ -64,21 +83,21 @@ namespace XmlFormatter
 
                 case XmlNodeType.CDATA:
                     var newLine = (prevNode == XmlNodeType.Text) ? string.Empty : Environment.NewLine;
-                    var spaces = (prevNode == XmlNodeType.Text) ? string.Empty : new string(SymbolConstants.Space, currentStartLength);
+                    var spaces = (prevNode == XmlNodeType.Text) ? string.Empty : new string(Constants.Space, currentStartLength);
                     sb.Append(newLine
                         + spaces
-                        + SymbolConstants.CDataStart
+                        + Constants.CDataStart
                         + node.Value
-                        + SymbolConstants.CDataEnd);
+                        + Constants.CDataEnd);
                     return;
 
                 case XmlNodeType.Comment:
-                    sb.Append(new string(SymbolConstants.Space, currentStartLength)
-                         + SymbolConstants.CommentTagStart
-                         + SymbolConstants.Space
-                         + node.Value
-                         + SymbolConstants.Space
-                         + SymbolConstants.CommentTagEnd);
+                    sb.Append(new string(Constants.Space, currentStartLength)
+                         + Constants.CommentTagStart
+                         + Constants.Space
+                         + node.Value?.Trim()
+                         + Constants.Space
+                         + Constants.CommentTagEnd);
                     return;
 
                 case XmlNodeType.Document:
@@ -90,7 +109,7 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.DocumentType:
-                    sb.Append(SymbolConstants.DocTypeStart + SymbolConstants.Space + SymbolConstants.DocTypeEnd(node.Value));
+                    sb.Append(Constants.DocTypeStart + Constants.Space + Constants.DocTypeEnd(node.Value));
 
                     return;
 
@@ -141,42 +160,40 @@ namespace XmlFormatter
             }
 
             //print start tag
-            var space = prevNode != XmlNodeType.Text ? new string(SymbolConstants.Space, currentStartLength) : string.Empty;
+            var space = prevNode != XmlNodeType.Text ? new string(Constants.Space, currentStartLength) : string.Empty;
             sb.Append(space
-                + SymbolConstants.StartTagStart
+                + Constants.StartTagStart
                 + node.Name);
 
             //print attributes
             if (node.Attributes?.Count > 0)
             {
-                sb.Append(SymbolConstants.Space);
-                currentAttributeSpace = currentStartLength + node.Name.Length + 2;
+                sb.Append(Constants.Space);
+                currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here
                 for (int i = 0; i < node.Attributes.Count; i++)
                 {
                     var attribute = node.Attributes[i];
                     var isLast = (i == (node.Attributes.Count - 1));
                     var newline = isLast ? string.Empty : Environment.NewLine;
-                    sb.Append(attribute.Name + SymbolConstants.AssignmentStart + attribute.Value + SymbolConstants.AssignmentEnd + newline);
+
+                    sb.Append(attribute.Name + (currentOptions.UseSingleQuotes ? Constants.AssignmentStartSingleQuote : Constants.AssignmentStart) + attribute.Value +
+                        (currentOptions.UseSingleQuotes ? Constants.AssignmentEndSingleQuote : Constants.AssignmentEnd) + newline);
                     if (isLast && node.HasChildNodes)
-                        sb.Append(SymbolConstants.StartTagEnd);
+                        sb.Append(Constants.StartTagEnd);
                     else if (!isLast)
-                        sb.Append(new string(SymbolConstants.Space, currentAttributeSpace));
+                        sb.Append(new string(Constants.Space, currentAttributeSpace));
                 }
             }
-            else if (!node.OuterXml.EndsWith("/>"))
+            else if (!node.OuterXml.EndsWith(Constants.InlineEndTag))
             {
-                sb.Append(SymbolConstants.StartTagEnd);
+                sb.Append(Constants.StartTagEnd);
             }
 
             //prints nodes
             if (node.HasChildNodes)
             {
-                int prevStartLength = currentStartLength;
                 if (!(node.ChildNodes.Cast<XmlNode>().First() is XmlText))
-                {
-                    prevStartLength = currentStartLength;
-                    currentStartLength += 2;
-                }
+                    currentStartLength += currentOptions.IndentLength;
 
                 for (int j = 0; j < node.ChildNodes.Count; j++)
                 {
@@ -186,7 +203,7 @@ namespace XmlFormatter
                         && currentChild.NodeType != XmlNodeType.EntityReference
                         && lastNodeType != XmlNodeType.Text)
                     {
-                        sb.Append(SymbolConstants.Newline);
+                        sb.Append(Constants.Newline);
                     }
                     //
                     PrintNode(currentChild, sb);
@@ -198,25 +215,25 @@ namespace XmlFormatter
                     && node.NodeType != XmlNodeType.DocumentType
                     && node.NodeType != XmlNodeType.Text)
                 {
-                    if (currentStartLength >= 2
+                    if (currentStartLength >= currentOptions.IndentLength
                         && lastNodeType != XmlNodeType.Text
                         && lastNodeType != XmlNodeType.CDATA
                         && lastNodeType != XmlNodeType.DocumentType
                         && lastNodeType != XmlNodeType.EntityReference
                         )
                     {
-                        currentStartLength -= 2;
+                        currentStartLength -= currentOptions.IndentLength;
                     }
                     var newLine = (lastNodeType != XmlNodeType.Text &&
                         lastNodeType != XmlNodeType.CDATA
-                        && lastNodeType != XmlNodeType.EntityReference) ? Environment.NewLine : string.Empty;
+                        && lastNodeType != XmlNodeType.EntityReference) ? Constants.Newline : string.Empty;
                     var spaces = (lastNodeType != XmlNodeType.Text &&
-                        lastNodeType != XmlNodeType.EntityReference) ? new string(SymbolConstants.Space, currentStartLength) : string.Empty;
+                        lastNodeType != XmlNodeType.EntityReference) ? new string(Constants.Space, currentStartLength) : string.Empty;
                     sb.Append(newLine
                       + spaces
-                      + SymbolConstants.EndTagStart
+                      + Constants.EndTagStart
                       + node.Name
-                      + SymbolConstants.EndTagEnd);
+                      + Constants.EndTagEnd);
                     lastNodeType = node.NodeType;
                 }
 
@@ -224,7 +241,10 @@ namespace XmlFormatter
             }
             else//close tag inline
             {
-                sb.Append(SymbolConstants.Space + SymbolConstants.InlineEndTag);
+                if (currentOptions.UseSelfClosingTags)
+                    sb.Append(Constants.Space + Constants.InlineEndTag);
+                else
+                    sb.AppendFormat($"></{node.Name}>");
             }
 
             return;
@@ -233,23 +253,32 @@ namespace XmlFormatter
         public string Beautify(string xmlString)
         {
             var xmlDoc = ConvertToXMLDocument(xmlString);
-            StringBuilder sb = new StringBuilder();
+            XmlDeclaration declaration = xmlDoc.ChildNodes
+                                .OfType<XmlDeclaration>()
+                                .FirstOrDefault();
+            StringWriter sw;
+
+            if (declaration != null)
+                sw = new StringWriterWithEncoding(Encoding.GetEncoding(declaration.Encoding));
+            else
+                sw = new StringWriterWithEncoding();
+
             XmlWriterSettings settings = new XmlWriterSettings
             {
                 Indent = true,
-                IndentChars = new string(SymbolConstants.Space, 1),
-                NewLineChars = SymbolConstants.Newline,
+                IndentChars = new string(Constants.Space, currentOptions.IndentLength),
+                NewLineChars = Constants.Newline,
                 NewLineHandling = NewLineHandling.Replace,
-                NewLineOnAttributes = true,
-                OmitXmlDeclaration = false,
+                NewLineOnAttributes = false,
+                OmitXmlDeclaration = declaration is null,
                 NamespaceHandling = NamespaceHandling.OmitDuplicates,
             };
-            using (XmlWriter writer = XmlWriter.Create(sb, settings))
+            using (XmlWriter writer = XmlWriter.Create(sw, settings))
             {
                 xmlDoc.Save(writer);
             }
 
-            return sb.ToString();
+            return sw.ToString();
         }
     }
 }

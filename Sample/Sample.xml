@@ -6,10 +6,10 @@
              mc:Ignorable="d"
              x:Class="App9.MainPage">
   <StackLayout>
-    <!--   Place new controls here   -->
+    <!-- Place new controls here -->
     <Label Text="Welcome to Xamarin.Forms!"
            HorizontalOptions="Center"
-           VerticalOptions="CenterAndExpand" />
+           VerticalOptions="CenterAndExpand"></Label>
     <documentfragment>doc</documentfragment>
     <![CDATA[Within this Character Data block I can
 use double dashes as much as I want (along with <, &, ', and ")
@@ -20,8 +20,8 @@ brackets or the greater-than sign using concatenated CDATA sections.
 ]]>
     <Label Text="Blh"
            HorizontalOptions="Center"
-           VerticalOptions="CenterAndExpand" />
-    <!--   Comment 2   -->
+           VerticalOptions="CenterAndExpand"></Label>
+    <!-- Comment 2 -->
     <Item>Test with a CDATA section <![CDATA[<456>]]> def</Item>
   </StackLayout>
 </ContentPage>
