@@ -185,21 +185,16 @@ namespace XmlFormatter
                     //start tag end if last tag
                     else if (node.HasChildNodes)
                         sb.Append(Constants.StartTagEnd);
-                    //else
-                    //{
-                    //    if (currentOptions.UseSelfClosingTags)
-                    //        sb.Append(Constants.Space + Constants.InlineEndTag);
-                    //    else
-                    //        sb.AppendFormat($"></{node.Name}>");
-                    //}
-
+                    //else see NoChildEndTag
                 }
             }
+            //No attributes
             else
             {
                 //start tag end if no attributes
                 if (node.HasChildNodes)
                     sb.Append(Constants.StartTagEnd);
+                //else see NoChildEndTag
             }
 
             //prints child nodes
@@ -252,6 +247,7 @@ namespace XmlFormatter
                 Debug.WriteLine(node.Name + " with value " + node.Value);
             }
             //if no childs endtag
+            #region NoChildEndTag
             else
             {
                 if (currentOptions.UseSelfClosingTags)
@@ -259,6 +255,8 @@ namespace XmlFormatter
                 else
                     sb.AppendFormat($"></{node.Name}>");
             }
+            #endregion NoChildEndTag
+
             return;
         }
 
@@ -270,7 +268,7 @@ namespace XmlFormatter
                                 .FirstOrDefault();
             StringWriter sw;
 
-            if (declaration != null && !string.IsNullOrEmpty(declaration?.Encoding))
+            if (!string.IsNullOrEmpty(declaration?.Encoding))
                 sw = new StringWriterWithEncoding(Encoding.GetEncoding(declaration.Encoding));
             else
                 sw = new StringWriterWithEncoding();
