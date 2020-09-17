@@ -178,18 +178,31 @@ namespace XmlFormatter
 
                     sb.Append(attribute.Name + (currentOptions.UseSingleQuotes ? Constants.AssignmentStartSingleQuote : Constants.AssignmentStart) + attribute.Value +
                         (currentOptions.UseSingleQuotes ? Constants.AssignmentEndSingleQuote : Constants.AssignmentEnd) + newline);
-                    if (isLast && node.HasChildNodes)
-                        sb.Append(Constants.StartTagEnd);
-                    else if (!isLast)
+
+                    //continue
+                    if (!isLast)
                         sb.Append(new string(Constants.Space, currentAttributeSpace));
+                    //start tag end if last tag
+                    else if (node.HasChildNodes)
+                        sb.Append(Constants.StartTagEnd);
+                    //else
+                    //{
+                    //    if (currentOptions.UseSelfClosingTags)
+                    //        sb.Append(Constants.Space + Constants.InlineEndTag);
+                    //    else
+                    //        sb.AppendFormat($"></{node.Name}>");
+                    //}
+
                 }
             }
-            else if (!node.OuterXml.EndsWith(Constants.InlineEndTag))
+            else
             {
-                sb.Append(Constants.StartTagEnd);
+                //start tag end if no attributes
+                if (node.HasChildNodes)
+                    sb.Append(Constants.StartTagEnd);
             }
 
-            //prints nodes
+            //prints child nodes
             if (node.HasChildNodes)
             {
                 if (!(node.ChildNodes.Cast<XmlNode>().First() is XmlText))
@@ -205,7 +218,6 @@ namespace XmlFormatter
                     {
                         sb.Append(Constants.Newline);
                     }
-                    //
                     PrintNode(currentChild, sb);
                 }
 
@@ -239,14 +251,14 @@ namespace XmlFormatter
 
                 Debug.WriteLine(node.Name + " with value " + node.Value);
             }
-            else//close tag inline
+            //if no childs endtag
+            else
             {
                 if (currentOptions.UseSelfClosingTags)
                     sb.Append(Constants.Space + Constants.InlineEndTag);
                 else
                     sb.AppendFormat($"></{node.Name}>");
             }
-
             return;
         }
 
@@ -258,7 +270,7 @@ namespace XmlFormatter
                                 .FirstOrDefault();
             StringWriter sw;
 
-            if (declaration != null)
+            if (declaration != null && !string.IsNullOrEmpty(declaration?.Encoding))
                 sw = new StringWriterWithEncoding(Encoding.GetEncoding(declaration.Encoding));
             else
                 sw = new StringWriterWithEncoding();
