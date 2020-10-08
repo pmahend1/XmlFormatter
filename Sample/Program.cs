@@ -11,22 +11,24 @@ namespace XmlFormatter
     {
         public static async Task Main(string[] args)
         {
-            var file = @"XMLFile3.xml";
+            var file = @"Sample.xml";
             var xmlString = File.ReadAllText(file);
             var formatter = new PrettyXML();
 
-            var jsonString = JsonConvert.SerializeObject(new JSInputDTO
-            {
-                XMLString = @xmlString,
-            });
+            //var jsonString = JsonConvert.SerializeObject(new JSInputDTO
+            //{
+            //    XMLString = @xmlString,
+            //});
 
-            var formattedText = formatter.Format(jsonString).Result;
+            var formattedText = formatter.Format(xmlString).Result;
             Console.WriteLine(formatter.Format(jsonString).Result);
             File.WriteAllText("Formatted_" + file, formattedText.ToString());
 
-            //old way
-            Console.WriteLine("--------Old Way------");
-            Console.WriteLine(new Formatter().Beautify(xmlString));
+            //minimize
+            //var minxml = new Formatter().Minimize(xmlString);
+            //Console.WriteLine("--------Old Way------");
+            //Console.WriteLine(minxml);
+            //File.WriteAllText("Minimized_" + file, minxml);
         }
 
         private static string FooBar(string xmlStr)
@@ -36,12 +38,12 @@ namespace XmlFormatter
             StringWriter sw = new StringWriter();
             XmlWriterSettings settings = new XmlWriterSettings
             {
-                Indent = true,
-                IndentChars = "\t",
-                NewLineChars = "\n",
+                Indent = false,
+                IndentChars = "",
+                NewLineChars = "",
                 NewLineHandling = NewLineHandling.Replace,
                 NewLineOnAttributes = false,
-                NamespaceHandling = NamespaceHandling.OmitDuplicates,
+                NamespaceHandling = NamespaceHandling.Default,
             };
             using (XmlWriter writer = XmlWriter.Create(sw, settings))
             {

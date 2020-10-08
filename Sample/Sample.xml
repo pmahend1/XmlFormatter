@@ -5,23 +5,23 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Class="App9.MainPage">
-  <StackLayout>
-    <!-- Place new controls here -->
-    <Label Text="Welcome to Xamarin.Forms!"
-           HorizontalOptions="Center"
-           VerticalOptions="CenterAndExpand"></Label>
-    <documentfragment>doc</documentfragment>
-    <![CDATA[Within this Character Data block I can
+    <StackLayout>
+        <!-- Place new controls here -->
+        <Label Text="Welcome to Xamarin.Forms!"
+               HorizontalOptions="Center"
+               VerticalOptions="CenterAndExpand" />
+        <documentfragment>doc</documentfragment>
+        <![CDATA[Within this Character Data block I can
 use double dashes as much as I want (along with <, &, ', and ")
 *and* %MyParamEntity; will be expanded to the text
 "Has been expanded" ... however, I can't use
 the CEND sequence. If I need to use CEND I must escape one of the
 brackets or the greater-than sign using concatenated CDATA sections.
 ]]>
-    <Label Text="Blh"
-           HorizontalOptions="Center"
-           VerticalOptions="CenterAndExpand"></Label>
-    <!-- Comment 2 -->
-    <Item>Test with a CDATA section <![CDATA[<456>]]> def</Item>
-  </StackLayout>
+        <Label Text="Blh"
+               HorizontalOptions="Center"
+               VerticalOptions="CenterAndExpand" />
+        <!-- Comment 2 -->
+        <Item>Test with a CDATA section <![CDATA[<456>]]> def</Item>
+    </StackLayout>
 </ContentPage>

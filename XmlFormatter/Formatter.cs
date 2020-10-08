@@ -247,7 +247,9 @@ namespace XmlFormatter
                 Debug.WriteLine(node.Name + " with value " + node.Value);
             }
             //if no childs endtag
+
             #region NoChildEndTag
+
             else
             {
                 if (currentOptions.UseSelfClosingTags)
@@ -255,12 +257,13 @@ namespace XmlFormatter
                 else
                     sb.AppendFormat($"></{node.Name}>");
             }
+
             #endregion NoChildEndTag
 
             return;
         }
 
-        public string Beautify(string xmlString)
+        public string Minimize(string xmlString)
         {
             var xmlDoc = ConvertToXMLDocument(xmlString);
             XmlDeclaration declaration = xmlDoc.ChildNodes
@@ -275,12 +278,11 @@ namespace XmlFormatter
 
             XmlWriterSettings settings = new XmlWriterSettings
             {
-                Indent = true,
-                IndentChars = new string(Constants.Space, currentOptions.IndentLength),
-                NewLineChars = Constants.Newline,
-                NewLineHandling = NewLineHandling.Replace,
+                Indent = false,
+                IndentChars = string.Empty,
+                NewLineChars = string.Empty,
+                NewLineHandling = NewLineHandling.Entitize,
                 NewLineOnAttributes = false,
-                OmitXmlDeclaration = declaration is null,
                 NamespaceHandling = NamespaceHandling.OmitDuplicates,
             };
             using (XmlWriter writer = XmlWriter.Create(sw, settings))
