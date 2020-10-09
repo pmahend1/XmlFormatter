@@ -1,29 +1,26 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.IO;
-using System.Threading.Tasks;
 using System.Xml;
-using XmlFormatter.VSCode;
 
 namespace XmlFormatter
 {
     internal class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
-            var file = @"Sample.xml";
+            var file = @"ResxSample.xml";
             var xmlString = File.ReadAllText(file);
-            var formatter = new PrettyXML();
+            var formatter = new Formatter();
 
             //var jsonString = JsonConvert.SerializeObject(new JSInputDTO
             //{
             //    XMLString = @xmlString,
             //});
 
-            var formattedText = formatter.Format(xmlString).Result;
-            Console.WriteLine(formatter.Format(jsonString).Result);
+            var formattedText = formatter.Format(xmlString);//.Result;
+            Console.WriteLine(formatter.Format(xmlString));//.Result);
             File.WriteAllText("Formatted_" + file, formattedText.ToString());
-
+            //await Task.Delay(1000);
             //minimize
             //var minxml = new Formatter().Minimize(xmlString);
             //Console.WriteLine("--------Old Way------");
