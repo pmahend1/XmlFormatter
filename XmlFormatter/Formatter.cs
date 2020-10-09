@@ -142,14 +142,14 @@ namespace XmlFormatter
                     return;
 
                 case XmlNodeType.SignificantWhitespace:
-                    break;
+                    return;
 
                 case XmlNodeType.Text:
                     sb.Append(node.OuterXml);
                     return;
 
                 case XmlNodeType.Whitespace:
-                    break;
+                    return;
 
                 case XmlNodeType.XmlDeclaration:
                     //done
@@ -209,7 +209,9 @@ namespace XmlFormatter
                     if (currentChild.NodeType != XmlNodeType.Text
                         && currentChild.NodeType != XmlNodeType.CDATA
                         && currentChild.NodeType != XmlNodeType.EntityReference
-                        && lastNodeType != XmlNodeType.Text)
+                        && lastNodeType != XmlNodeType.Text
+                        && currentChild.NodeType != XmlNodeType.SignificantWhitespace
+                        &&  currentChild.NodeType != XmlNodeType.Whitespace)
                     {
                         sb.Append(Constants.Newline);
                     }
