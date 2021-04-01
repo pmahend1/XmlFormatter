@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<node1 a="here &amp; now">
+  <node b="&#10; ">more...</node>
+  <node b="&#9;">black &amp; white</node>
+</node1>
