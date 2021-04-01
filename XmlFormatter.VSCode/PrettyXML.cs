@@ -37,8 +37,8 @@ namespace XmlFormatter.VSCode
 
         public Task<object> Minimize(string input)
         {
-                var formattedXML = new Formatter().Minimize(input);
-                return Task.FromResult<object>((object)formattedXML);
+            var formattedXML = new Formatter().Minimize(input);
+            return Task.FromResult<object>((object)formattedXML);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Xml;
 
@@ -21,7 +22,6 @@ namespace XmlFormatter
         {
             XmlDocument xml = new XmlDocument();
             xml.LoadXml(input);
-
             return xml;
         }
 
@@ -176,8 +176,10 @@ namespace XmlFormatter
                     var isLast = (i == (node.Attributes.Count - 1));
                     var newline = isLast ? string.Empty : Environment.NewLine;
 
-                    sb.Append(attribute.Name + (currentOptions.UseSingleQuotes ? Constants.AssignmentStartSingleQuote : Constants.AssignmentStart) + attribute.Value +
-                        (currentOptions.UseSingleQuotes ? Constants.AssignmentEndSingleQuote : Constants.AssignmentEnd) + newline);
+                    sb.Append(attribute.Name
+                        + (currentOptions.UseSingleQuotes ? Constants.AssignmentStartSingleQuote : Constants.AssignmentStart)
+                        + SecurityElement.Escape(attribute.Value)
+                        + (currentOptions.UseSingleQuotes ? Constants.AssignmentEndSingleQuote : Constants.AssignmentEnd) + newline);
 
                     //continue
                     if (!isLast)
@@ -211,7 +213,7 @@ namespace XmlFormatter
                         && currentChild.NodeType != XmlNodeType.EntityReference
                         && lastNodeType != XmlNodeType.Text
                         && currentChild.NodeType != XmlNodeType.SignificantWhitespace
-                        &&  currentChild.NodeType != XmlNodeType.Whitespace)
+                        && currentChild.NodeType != XmlNodeType.Whitespace)
                     {
                         sb.Append(Constants.Newline);
                     }

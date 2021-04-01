@@ -8,24 +8,14 @@ namespace XmlFormatter
     {
         public static void Main(string[] args)
         {
-            var file = @"ResxSample.xml";
+            var file = @"XMLFile4.xml";
             var xmlString = File.ReadAllText(file);
             var formatter = new Formatter();
-
-            //var jsonString = JsonConvert.SerializeObject(new JSInputDTO
-            //{
-            //    XMLString = @xmlString,
-            //});
 
             var formattedText = formatter.Format(xmlString);//.Result;
             Console.WriteLine(formatter.Format(xmlString));//.Result);
             File.WriteAllText("Formatted_" + file, formattedText.ToString());
-            //await Task.Delay(1000);
-            //minimize
-            //var minxml = new Formatter().Minimize(xmlString);
-            //Console.WriteLine("--------Old Way------");
-            //Console.WriteLine(minxml);
-            //File.WriteAllText("Minimized_" + file, minxml);
+            
         }
 
         private static string FooBar(string xmlStr)
