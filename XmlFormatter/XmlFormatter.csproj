@@ -5,9 +5,5 @@
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
- 
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
 
 </Project>

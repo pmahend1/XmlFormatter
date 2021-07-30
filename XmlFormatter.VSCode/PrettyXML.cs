@@ -18,9 +18,13 @@ namespace XmlFormatter.VSCode
                     options.IndentLength = _JSInputDTO?.IndentLength ?? options.IndentLength;
                     options.UseSelfClosingTags = _JSInputDTO?.UseSelfClosingTags ?? options.UseSelfClosingTags;
                     options.UseSingleQuotes = _JSInputDTO?.UseSingleQuotes ?? options.UseSingleQuotes;
+                    options.AllowSingleQuoteInAttributeValue = _JSInputDTO?.AllowSingleQuoteInAttributeValue ?? options.AllowSingleQuoteInAttributeValue;
+                    options.AddSpaceBeforeSelfClosingTag = _JSInputDTO?.AddSpaceBeforeSelfClosingTag ?? options.AddSpaceBeforeSelfClosingTag;
+                    options.WrapCommentTextWithSpaces = _JSInputDTO?.WrapCommentTextWithSpaces ?? options.WrapCommentTextWithSpaces;
 
                     var formattedXML = new Formatter().Format(_JSInputDTO.XMLString, options);
-                    return Task.FromResult<object>((object)formattedXML);
+
+                    return Task.FromResult((object)formattedXML);
                 }
                 else
                 {

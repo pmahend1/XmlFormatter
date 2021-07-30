@@ -37,5 +37,7 @@ namespace XmlFormatter
         public static string DocTypeEnd(string val) => string.Format("[{0}]", val);
 
         public static readonly string Newline = Environment.NewLine;
+
+        public const string Apos = "&apos;";
     }
 }

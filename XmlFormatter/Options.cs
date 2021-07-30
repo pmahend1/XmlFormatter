@@ -5,5 +5,8 @@
         public int IndentLength { get; set; } = 2;
         public bool UseSelfClosingTags { get; set; } = true;
         public bool UseSingleQuotes { get; set; } = false;
+        public bool AllowSingleQuoteInAttributeValue { get; set; } = true;
+        public bool AddSpaceBeforeSelfClosingTag { get; set; } = true;
+        public bool WrapCommentTextWithSpaces {  get; set; } = true;
     }
 }

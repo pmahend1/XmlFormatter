@@ -12,10 +12,9 @@ namespace XmlFormatter
             var xmlString = File.ReadAllText(file);
             var formatter = new Formatter();
 
-            var formattedText = formatter.Format(xmlString);//.Result;
-            Console.WriteLine(formatter.Format(xmlString));//.Result);
+            var formattedText = formatter.Format(xmlString);
+            Console.WriteLine(formatter.Format(xmlString));
             File.WriteAllText("Formatted_" + file, formattedText.ToString());
-            
         }
 
         private static string FooBar(string xmlStr)
