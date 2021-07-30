@@ -34,6 +34,10 @@ namespace XmlFormatter
                     currentOptions = formattingOptions;
                 }
 
+                if (formattingOptions.UseSingleQuotes)
+                {
+                    currentOptions.AllowSingleQuoteInAttributeValue = false;
+                }
                 var xmlDocument = ConvertToXMLDocument(input);
                 var formattedXML = FormatXMLDocument(xmlDocument);
                 return formattedXML;
@@ -185,7 +189,7 @@ namespace XmlFormatter
 
                     var attributeValue = SecurityElement.Escape(attribute.Value);
 
-                    if (currentOptions.AllowSingleQuoteInAttributeValue && attribute.Value.Contains(Constants.Apos))
+                    if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains(Constants.Apos))
                     {
                         attributeValue = attributeValue.Replace(Constants.Apos, "'");
                     }
