@@ -8,5 +8,6 @@
         public bool AllowSingleQuoteInAttributeValue { get; set; } = true;
         public bool AddSpaceBeforeSelfClosingTag { get; set; } = true;
         public bool WrapCommentTextWithSpaces {  get; set; } = true;
+        public bool AllowWhiteSpaceUnicodesInAttributeValues { get; set; } = true; 
     }
 }
