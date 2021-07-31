@@ -2,7 +2,7 @@
 {
     public class Options
     {
-        public int IndentLength { get; set; } = 2;
+        public int IndentLength { get; set; } = 4;
         public bool UseSelfClosingTags { get; set; } = true;
         public bool UseSingleQuotes { get; set; } = false;
         public bool AllowSingleQuoteInAttributeValue { get; set; } = true;
