@@ -9,5 +9,6 @@
         public bool? AllowSingleQuoteInAttributeValue { get; set; }
         public bool? AddSpaceBeforeSelfClosingTag { get; set; }
         public bool? WrapCommentTextWithSpaces { get; set; }
+        public bool? AllowWhiteSpaceUnicodesInAttributeValues { get; set; }
     }
 }

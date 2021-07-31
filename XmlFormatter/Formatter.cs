@@ -32,11 +32,11 @@ namespace XmlFormatter
                 if (formattingOptions != null)
                 {
                     currentOptions = formattingOptions;
-                }
 
-                if (formattingOptions.UseSingleQuotes)
-                {
-                    currentOptions.AllowSingleQuoteInAttributeValue = false;
+                    if (formattingOptions.UseSingleQuotes)
+                    {
+                        currentOptions.AllowSingleQuoteInAttributeValue = false;
+                    }
                 }
                 var xmlDocument = ConvertToXMLDocument(input);
                 var formattedXML = FormatXMLDocument(xmlDocument);
@@ -180,7 +180,7 @@ namespace XmlFormatter
             if (node.Attributes?.Count > 0)
             {
                 sb.Append(Constants.Space);
-                currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here
+                currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
                 for (int i = 0; i < node.Attributes.Count; i++)
                 {
                     var attribute = node.Attributes[i];
@@ -188,6 +188,19 @@ namespace XmlFormatter
                     var newline = isLast ? string.Empty : Environment.NewLine;
 
                     var attributeValue = SecurityElement.Escape(attribute.Value);
+
+                    if (currentOptions.AllowWhiteSpaceUnicodesInAttributeValues)
+                    {
+                        if (attributeValue.Contains("\n"))
+                        {
+                            attributeValue = attributeValue.Replace("\n", "&#xA;");
+                        }
+
+                        if (attributeValue.Contains("\t"))
+                        {
+                            attributeValue = attributeValue.Replace("\t", "&#x9;");
+                        }
+                    }
 
                     if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains(Constants.Apos))
                     {
