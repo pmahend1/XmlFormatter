@@ -10,5 +10,6 @@
         public bool? AddSpaceBeforeSelfClosingTag { get; set; }
         public bool? WrapCommentTextWithSpaces { get; set; }
         public bool? AllowWhiteSpaceUnicodesInAttributeValues { get; set; }
+        public bool? PositionFirstAttributeOnSameLine { get; set; }
     }
 }

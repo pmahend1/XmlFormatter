@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace XmlFormatter.VSCode
 {
@@ -23,6 +21,7 @@ namespace XmlFormatter.VSCode
                     options.AddSpaceBeforeSelfClosingTag = jsInputDto.AddSpaceBeforeSelfClosingTag ?? options.AddSpaceBeforeSelfClosingTag;
                     options.WrapCommentTextWithSpaces = jsInputDto.WrapCommentTextWithSpaces ?? options.WrapCommentTextWithSpaces;
                     options.AllowWhiteSpaceUnicodesInAttributeValues = jsInputDto.AllowWhiteSpaceUnicodesInAttributeValues ?? options.AllowWhiteSpaceUnicodesInAttributeValues;
+                    options.PositionFirstAttributeOnSameLine = jsInputDto.PositionFirstAttributeOnSameLine ?? options.PositionFirstAttributeOnSameLine;
 
                     var formattedXML = new Formatter().Format(jsInputDto.XMLString, options);
 
