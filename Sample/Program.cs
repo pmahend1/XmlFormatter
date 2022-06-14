@@ -8,12 +8,12 @@ namespace XmlFormatter
     {
         public static void Main(string[] args)
         {
-            var file = @"XMLFile4.xml";
+            var file = @"ResxSample.xml";
             var xmlString = File.ReadAllText(file);
-            var formatter = new Formatter();
+            var formatter = new Formatter() ;
 
-            var formattedText = formatter.Format(xmlString);
-            Console.WriteLine(formatter.Format(xmlString));
+            var formattedText = formatter.Format(xmlString, new Options { PositionFirstAttributeOnSameLine = false });
+            Console.WriteLine(formattedText);
             File.WriteAllText("Formatted_" + file, formattedText.ToString());
         }
 

@@ -11,20 +11,20 @@ namespace XmlFormatter.VSCode
         {
             try
             {
-                var _JSInputDTO = JsonConvert.DeserializeObject<JSInputDTO>(inputJsonString);
-                if (_JSInputDTO != null)
+                var jsInputDto = JsonConvert.DeserializeObject<JSInputDTO>(inputJsonString);
+                if (jsInputDto != null)
                 {
                     var options = new Options();
 
-                    options.IndentLength = _JSInputDTO?.IndentLength ?? options.IndentLength;
-                    options.UseSelfClosingTags = _JSInputDTO?.UseSelfClosingTags ?? options.UseSelfClosingTags;
-                    options.UseSingleQuotes = _JSInputDTO?.UseSingleQuotes ?? options.UseSingleQuotes;
-                    options.AllowSingleQuoteInAttributeValue = _JSInputDTO?.AllowSingleQuoteInAttributeValue ?? options.AllowSingleQuoteInAttributeValue;
-                    options.AddSpaceBeforeSelfClosingTag = _JSInputDTO?.AddSpaceBeforeSelfClosingTag ?? options.AddSpaceBeforeSelfClosingTag;
-                    options.WrapCommentTextWithSpaces = _JSInputDTO?.WrapCommentTextWithSpaces ?? options.WrapCommentTextWithSpaces;
-                    options.AllowWhiteSpaceUnicodesInAttributeValues = _JSInputDTO?.AllowWhiteSpaceUnicodesInAttributeValues ?? options.AllowWhiteSpaceUnicodesInAttributeValues;
+                    options.IndentLength = jsInputDto.IndentLength ?? options.IndentLength;
+                    options.UseSelfClosingTags = jsInputDto.UseSelfClosingTags ?? options.UseSelfClosingTags;
+                    options.UseSingleQuotes = jsInputDto.UseSingleQuotes ?? options.UseSingleQuotes;
+                    options.AllowSingleQuoteInAttributeValue = jsInputDto.AllowSingleQuoteInAttributeValue ?? options.AllowSingleQuoteInAttributeValue;
+                    options.AddSpaceBeforeSelfClosingTag = jsInputDto.AddSpaceBeforeSelfClosingTag ?? options.AddSpaceBeforeSelfClosingTag;
+                    options.WrapCommentTextWithSpaces = jsInputDto.WrapCommentTextWithSpaces ?? options.WrapCommentTextWithSpaces;
+                    options.AllowWhiteSpaceUnicodesInAttributeValues = jsInputDto.AllowWhiteSpaceUnicodesInAttributeValues ?? options.AllowWhiteSpaceUnicodesInAttributeValues;
 
-                    var formattedXML = new Formatter().Format(_JSInputDTO.XMLString, options);
+                    var formattedXML = new Formatter().Format(jsInputDto.XMLString, options);
 
                     return Task.FromResult((object)formattedXML);
                 }
@@ -37,7 +37,7 @@ namespace XmlFormatter.VSCode
             {
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace);
-                throw ex;
+                throw;
             }
         }
 
