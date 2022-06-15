@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29905.134
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31710.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample", "Sample\Sample.csproj", "{D0B94993-3A9A-46CB-9A1F-D141758B098F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlFormatter.VSCode", "XmlFormatter.VSCode\XmlFormatter.VSCode.csproj", "{DD78F753-5259-494B-BEDA-3347FDF23A94}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlFormatter.VSCode", "XmlFormatter.VSCode\XmlFormatter.VSCode.csproj", "{DD78F753-5259-494B-BEDA-3347FDF23A94}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlFormatter", "XmlFormatter\XmlFormatter.csproj", "{D29278E3-6CC1-429B-BC4D-227F9B174E89}"
 EndProject

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Security;
 using System.Text;
 using System.Xml;
@@ -25,7 +22,7 @@ namespace XmlFormatter
             return xml;
         }
 
-        public string Format(string input, Options formattingOptions = null)
+        public string Format(string input, Options? formattingOptions = null)
         {
             try
             {
@@ -45,7 +42,7 @@ namespace XmlFormatter
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.StackTrace);
-                throw ex;
+                throw;
             }
         }
 
@@ -53,8 +50,8 @@ namespace XmlFormatter
         {
             StringBuilder sb = new StringBuilder();
 
-            XmlDeclaration declaration = xml.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
-            
+            XmlDeclaration? declaration = xml.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
+
             if (declaration != null)
             {
                 lastNodeType = XmlNodeType.XmlDeclaration;
@@ -64,10 +61,13 @@ namespace XmlFormatter
             {
                 sb.Append(xml.DocumentType.OuterXml + Constants.Newline);
             }
-            var root = xml.DocumentElement;
+            XmlElement? root = xml.DocumentElement;
             lastNodeType = XmlNodeType.Document;
 
-            PrintNode(root, ref sb);
+            if (root != null)
+            {
+                PrintNode(root, ref sb);
+            }
             return sb.ToString();
         }
 
@@ -121,8 +121,7 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.DocumentType:
-                    sb.Append(Constants.DocTypeStart + Constants.Space + Constants.DocTypeEnd(node.Value));
-
+                    sb.Append(Constants.DocTypeStart + Constants.Space + Constants.DocTypeEnd(node?.Value));
                     return;
 
                 case XmlNodeType.Element:
@@ -174,13 +173,23 @@ namespace XmlFormatter
             //print start tag
             var space = prevNode != XmlNodeType.Text ? new string(Constants.Space, currentStartLength) : string.Empty;
 
-            sb.Append(space+ Constants.StartTagStart+ node.Name);
+            sb.Append(space + Constants.StartTagStart + node.Name);
 
             //print attributes
             if (node.Attributes?.Count > 0)
             {
-                sb.Append(Constants.Space);
-                currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
+                if (currentOptions.PositionFirstAttributeOnSameLine)
+                {
+                    sb.Append(Constants.Space);
+                    currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
+                }
+                else
+                {
+                    sb.Append(Environment.NewLine);
+                    currentAttributeSpace = currentStartLength + currentOptions.IndentLength;
+                    sb.Append(new string(Constants.Space, currentAttributeSpace));
+                }
+
                 for (int i = 0; i < node.Attributes.Count; i++)
                 {
                     var attribute = node.Attributes[i];
@@ -233,22 +242,25 @@ namespace XmlFormatter
             //prints child nodes
             if (node.HasChildNodes)
             {
-                if (!(node.ChildNodes.Cast<XmlNode>().First() is XmlText))
+                if (node.ChildNodes.Cast<XmlNode>().FirstOrDefault() is not XmlText)
                     currentStartLength += currentOptions.IndentLength;
 
                 for (int j = 0; j < node.ChildNodes.Count; j++)
                 {
                     var currentChild = node.ChildNodes[j];
-                    if (currentChild.NodeType != XmlNodeType.Text
-                        && currentChild.NodeType != XmlNodeType.CDATA
-                        && currentChild.NodeType != XmlNodeType.EntityReference
-                        && lastNodeType != XmlNodeType.Text
-                        && currentChild.NodeType != XmlNodeType.SignificantWhitespace
-                        && currentChild.NodeType != XmlNodeType.Whitespace)
+                    if (currentChild is not null)
                     {
-                        sb.Append(Constants.Newline);
+                        if (currentChild.NodeType != XmlNodeType.Text
+                            && currentChild.NodeType != XmlNodeType.CDATA
+                            && currentChild.NodeType != XmlNodeType.EntityReference
+                            && lastNodeType != XmlNodeType.Text
+                            && currentChild.NodeType != XmlNodeType.SignificantWhitespace
+                            && currentChild.NodeType != XmlNodeType.Whitespace)
+                        {
+                            sb.Append(Constants.Newline);
+                        }
+                        PrintNode(currentChild, ref sb);
                     }
-                    PrintNode(currentChild, ref sb);
                 }
 
                 //close tag after all child nodes
