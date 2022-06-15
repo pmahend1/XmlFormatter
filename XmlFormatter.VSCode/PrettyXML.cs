@@ -10,7 +10,7 @@ namespace XmlFormatter.VSCode
             try
             {
                 var jsInputDto = JsonConvert.DeserializeObject<JSInputDTO>(inputJsonString);
-                if (jsInputDto != null)
+                if (jsInputDto != null && !string.IsNullOrWhiteSpace(jsInputDto.XMLString))
                 {
                     var options = new Options();
 
@@ -24,7 +24,6 @@ namespace XmlFormatter.VSCode
                     options.PositionFirstAttributeOnSameLine = jsInputDto.PositionFirstAttributeOnSameLine ?? options.PositionFirstAttributeOnSameLine;
 
                     var formattedXML = new Formatter().Format(jsInputDto.XMLString, options);
-
                     return Task.FromResult((object)formattedXML);
                 }
                 else
@@ -34,7 +33,6 @@ namespace XmlFormatter.VSCode
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace);
                 throw;
             }
