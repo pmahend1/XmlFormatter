@@ -121,7 +121,10 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.DocumentType:
-                    sb.Append(Constants.DocTypeStart + Constants.Space + Constants.DocTypeEnd(node?.Value));
+                    if(!string.IsNullOrWhiteSpace(node.Value))
+                    {
+                        sb.Append(Constants.DocTypeStart + Constants.Space + Constants.DocTypeEnd(node.Value));
+                    }
                     return;
 
                 case XmlNodeType.Element:
@@ -323,14 +326,18 @@ namespace XmlFormatter
         {
             var xmlDoc = ConvertToXMLDocument(xmlString);
 
-            XmlDeclaration declaration = xmlDoc.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
+            XmlDeclaration? declaration = xmlDoc.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
 
             StringWriter sw;
 
             if (!string.IsNullOrEmpty(declaration?.Encoding))
+            {
                 sw = new StringWriterWithEncoding(Encoding.GetEncoding(declaration.Encoding));
+            }
             else
+            {
                 sw = new StringWriterWithEncoding();
+            }
 
             XmlWriterSettings settings = new XmlWriterSettings
             {
