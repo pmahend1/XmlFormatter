@@ -93,7 +93,7 @@ namespace XmlFormatter
                     return;
 
                 case XmlNodeType.Comment:
-                    if (currentOptions.KeepWhiteSpacesInComment)
+                    if (currentOptions.PreserveWhiteSpacesInComment)
                     {
                         sb.Append(new string(Constants.Space, currentStartLength) + node.OuterXml);
                     }
