@@ -10,5 +10,6 @@
         public bool WrapCommentTextWithSpaces { get; set; } = true;
         public bool AllowWhiteSpaceUnicodesInAttributeValues { get; set; } = true;
         public bool PositionFirstAttributeOnSameLine { get; set; } = true;
+        public bool PreserveWhiteSpacesInComment { get; set; } = false;
     }
 }
