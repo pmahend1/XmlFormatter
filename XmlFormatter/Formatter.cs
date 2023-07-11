@@ -93,7 +93,11 @@ namespace XmlFormatter
                     return;
 
                 case XmlNodeType.Comment:
-                    if (currentOptions.WrapCommentTextWithSpaces)
+                    if (currentOptions.PreserveWhiteSpacesInComment)
+                    {
+                        sb.Append(new string(Constants.Space, currentStartLength) + node.OuterXml);
+                    }
+                    else if (currentOptions.WrapCommentTextWithSpaces)
                     {
                         sb.Append(new string(Constants.Space, currentStartLength)
                                   + Constants.CommentTagStart
@@ -121,7 +125,7 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.DocumentType:
-                    if(!string.IsNullOrWhiteSpace(node.Value))
+                    if (!string.IsNullOrWhiteSpace(node.Value))
                     {
                         sb.Append(Constants.DocTypeStart + Constants.Space + Constants.DocTypeEnd(node.Value));
                     }
