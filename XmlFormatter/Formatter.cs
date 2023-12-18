@@ -207,14 +207,24 @@ namespace XmlFormatter
 
                     if (currentOptions.AllowWhiteSpaceUnicodesInAttributeValues)
                     {
-                        if (attributeValue.Contains("\n"))
+                        if (attributeValue.Contains('\n'))
                         {
                             attributeValue = attributeValue.Replace("\n", "&#xA;");
                         }
 
-                        if (attributeValue.Contains("\t"))
+                        if (attributeValue.Contains('\t'))
                         {
                             attributeValue = attributeValue.Replace("\t", "&#x9;");
+                        }
+
+                        if (attributeValue.Contains("&lt;"))
+                        {
+                            attributeValue = attributeValue.Replace("&lt;", "<");
+                        }
+
+                        if (attributeValue.Contains("&gt;"))
+                        {
+                            attributeValue = attributeValue.Replace("&gt;", ">");
                         }
                     }
 
