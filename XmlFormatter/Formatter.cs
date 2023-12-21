@@ -207,12 +207,12 @@ namespace XmlFormatter
 
                     if (currentOptions.AllowWhiteSpaceUnicodesInAttributeValues)
                     {
-                        if (attributeValue.Contains('\n'))
+                        if (attributeValue.Contains("\n"))
                         {
                             attributeValue = attributeValue.Replace("\n", "&#xA;");
                         }
 
-                        if (attributeValue.Contains('\t'))
+                        if (attributeValue.Contains("\t"))
                         {
                             attributeValue = attributeValue.Replace("\t", "&#x9;");
                         }
