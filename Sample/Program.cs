@@ -25,11 +25,11 @@ namespace XmlFormatter
             foreach (var file in files)
             {
                 var dashes = new string('-', file.Length + 1);
- 
-                WriteToConsole($"{file}: {Environment.NewLine}{dashes}", ConsoleColor.Blue);
+
+                WriteToConsole($"{file}: {Environment.NewLine}{dashes}", textColor: ConsoleColor.Blue);
                 var xmlString = File.ReadAllText(file);
 
-                WriteToConsole($"Input: {Environment.NewLine}------", ConsoleColor.Cyan);
+                WriteToConsole($"Input: {Environment.NewLine}------", textColor: ConsoleColor.Cyan);
 
                 WriteToConsole($"{xmlString}{Environment.NewLine}");
                 var formatter = new Formatter();
@@ -37,7 +37,7 @@ namespace XmlFormatter
                 var formattedText = formatter.Format(xmlString);
                 File.WriteAllText("Formatted_" + file, formattedText.ToString());
 
-                WriteToConsole($"Formatted: {Environment.NewLine}----------", ConsoleColor.Green);
+                WriteToConsole($"Formatted: {Environment.NewLine}----------", textColor: ConsoleColor.Green);
 
                 WriteToConsole($"{formattedText}{Environment.NewLine}{Environment.NewLine}");
             }
