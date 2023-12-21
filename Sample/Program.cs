@@ -12,10 +12,7 @@ namespace XmlFormatter
             var xmlString = File.ReadAllText(file);
             var formatter = new Formatter();
 
-            var formattedText = formatter.Format(xmlString, new Options
-            {
-                AllowWhiteSpaceUnicodesInAttributeValues = true,
-            });
+            var formattedText = formatter.Format(xmlString);
             Console.WriteLine(formattedText);
             File.WriteAllText("Formatted_" + file, formattedText.ToString());
         }
