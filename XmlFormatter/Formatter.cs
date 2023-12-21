@@ -217,10 +217,6 @@ namespace XmlFormatter
                             attributeValue = attributeValue.Replace("\t", "&#x9;");
                         }
 
-                        if (attributeValue.Contains("&lt;"))
-                        {
-                            attributeValue = attributeValue.Replace("&lt;", "<");
-                        }
 
                         if (attributeValue.Contains("&gt;"))
                         {
