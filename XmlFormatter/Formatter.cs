@@ -216,6 +216,11 @@ namespace XmlFormatter
                         {
                             attributeValue = attributeValue.Replace("\t", "&#x9;");
                         }
+
+                        if (attributeValue.Contains("&gt;"))
+                        {
+                            attributeValue = attributeValue.Replace("&gt;", ">");
+                        }
                     }
 
                     if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains(Constants.Apos))

@@ -8,13 +8,52 @@ namespace XmlFormatter
     {
         public static void Main(string[] args)
         {
-            var file = @"XMLFile4.xml";
-            var xmlString = File.ReadAllText(file);
-            var formatter = new Formatter();
+            var files = new string[]
+            {
+                "XMLFile1.xml",
+                "XMLFile2.xml",
+                "XMLFile3.xml",
+                "XMLFile4.xml",
+                "XMLFile5.xml",
+                "Sample.xml",
+                "Sample2.xml",
+                "Sample3.xml",
+                "Sample4.xml",
+                "ResxSample.xml"
+            };
 
-            var formattedText = formatter.Format(xmlString);
-            Console.WriteLine(formatter.Format(xmlString));
-            File.WriteAllText("Formatted_" + file, formattedText.ToString());
+            foreach (var file in files)
+            {
+                var dashes = new string('-', file.Length + 1);
+
+                WriteToConsole($"{file}: {Environment.NewLine}{dashes}", textColor: ConsoleColor.Blue);
+                var xmlString = File.ReadAllText(file);
+
+                WriteToConsole($"Input: {Environment.NewLine}------", textColor: ConsoleColor.Cyan);
+
+                WriteToConsole($"{xmlString}{Environment.NewLine}");
+                var formatter = new Formatter();
+
+                var formattedText = formatter.Format(xmlString);
+                File.WriteAllText("Formatted_" + file, formattedText.ToString());
+
+                WriteToConsole($"Formatted: {Environment.NewLine}----------", textColor: ConsoleColor.Green);
+
+                WriteToConsole($"{formattedText}{Environment.NewLine}{Environment.NewLine}");
+            }
+        }
+
+        static void WriteToConsole(string text,
+                                   ConsoleColor textColor = ConsoleColor.Gray,
+                                   ConsoleColor backgroundColor = ConsoleColor.Black)
+        {
+
+            Console.ForegroundColor = textColor;
+            Console.BackgroundColor = backgroundColor;
+
+            Console.WriteLine(text);
+            Console.ResetColor();
+
         }
 
         private static string FooBar(string xmlStr)
