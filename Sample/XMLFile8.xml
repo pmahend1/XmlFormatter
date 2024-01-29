@@ -1,0 +1,4 @@
+<!DOCTYPE myElement SYSTEM "myElement.dtd">
+<myElement>
+    <content>This is an XML document with an external DTD.</content>
+</myElement>

@@ -1,0 +1,16 @@
+<!DOCTYPE MyDocument [
+    <!ENTITY company "Example Corp.">
+    <!ENTITY product "WidgetX">
+    <!ENTITY price "$19.99">
+    <!ENTITY contactInfo "contact@example.com">
+]>
+
+<MyDocument>
+    <header>
+        <title>Welcome to &company;</title>
+    </header>
+    <content>
+        <p>We are excited to introduce our new product, the &product;. It's priced at &price;.</p>
+        <p>For inquiries, please contact us at &contactInfo;.</p>
+    </content>
+</MyDocument>

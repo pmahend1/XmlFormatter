@@ -48,7 +48,7 @@ namespace XmlFormatter
 
         private string FormatXMLDocument(XmlDocument xml)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             XmlDeclaration? declaration = xml.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
 
@@ -59,7 +59,39 @@ namespace XmlFormatter
             }
             if (xml.DocumentType != null)
             {
-                sb.Append(xml.DocumentType.OuterXml + Constants.Newline);
+                var docTypeText = $"<!DOCTYPE {xml.DocumentType.Name}";
+
+                if (xml.DocumentType.Entities != null)
+                {
+                    var newLineOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? Environment.NewLine : "")}";
+                    var tabOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? "\t" : "")}";
+                    docTypeText += $" [{newLineOrEmpty}";
+
+                    for (int i = 0; i < xml.DocumentType.Entities.Count; i++)
+                    {
+                        var entity = xml.DocumentType.Entities.Item(i);
+                        if (entity != null)
+                        {
+                            docTypeText += $"{tabOrEmpty}<!ENTITY {entity.Name} \"{entity.InnerText}\">{newLineOrEmpty}";
+                        }
+                    }
+                    docTypeText += $"]";
+                }
+                
+                if (xml.DocumentType.PublicId != null)
+                {
+                    docTypeText += $" PUBLIC \"{xml.DocumentType.PublicId}\"";
+                }
+
+                if (xml.DocumentType.SystemId != null)
+                {
+                    docTypeText += $" \"{xml.DocumentType.SystemId}\"";
+                }
+
+                docTypeText += ">";
+
+                Debug.WriteLine($"DOCTYPE text: {docTypeText}");
+                sb.AppendLine(docTypeText);
             }
             XmlElement? root = xml.DocumentElement;
             lastNodeType = XmlNodeType.Document;
