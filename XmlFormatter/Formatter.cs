@@ -75,7 +75,7 @@ namespace XmlFormatter
                             docTypeText += $"{tabOrEmpty}<!ENTITY {entity.Name} \"{entity.InnerText}\">{newLineOrEmpty}";
                         }
                     }
-                    docTypeText += $"]{newLineOrEmpty}";
+                    docTypeText += $"]";
                 }
                 
                 if (xml.DocumentType.PublicId != null)
