@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Text.Json;
 
 namespace XmlFormatter.CommandLine
 {
@@ -21,7 +21,7 @@ namespace XmlFormatter.CommandLine
             {
                 try
                 {
-                    JsonInputDto? jsonInputDto = JsonConvert.DeserializeObject<JsonInputDto>(inputString);
+                    JsonInputDto? jsonInputDto = JsonSerializer.Deserialize<JsonInputDto>(inputString);
                     if (jsonInputDto == null || string.IsNullOrWhiteSpace(jsonInputDto.XMLString))
                     {
                         throw new Exception("Unable to parse file");

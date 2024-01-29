@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Text.Json;
 
 namespace XmlFormatter.VSCode
 {
@@ -9,7 +9,7 @@ namespace XmlFormatter.VSCode
         {
             try
             {
-                var jsInputDto = JsonConvert.DeserializeObject<JSInputDTO>(inputJsonString);
+                var jsInputDto = JsonSerializer.Deserialize<JSInputDTO>(inputJsonString);
                 if (jsInputDto != null && !string.IsNullOrWhiteSpace(jsInputDto.XMLString))
                 {
                     var options = new Options();
