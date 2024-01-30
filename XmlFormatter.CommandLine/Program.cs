@@ -8,7 +8,7 @@ namespace XmlFormatter.CommandLine
         public static async Task Main(string[] args)
         {
             string inputString = string.Empty;
-            using (StreamReader reader = new StreamReader(Console.OpenStandardInput(), Console.InputEncoding))
+            using (StreamReader reader = new(Console.OpenStandardInput(), Console.InputEncoding))
             {
                 inputString = await reader.ReadToEndAsync().ConfigureAwait(false);
             }
@@ -42,7 +42,7 @@ namespace XmlFormatter.CommandLine
                 catch (Exception ex)
                 {
                     Debug.WriteLine(ex.Message);
-                    //throw;
+                    throw;
                 }
             }
         }
