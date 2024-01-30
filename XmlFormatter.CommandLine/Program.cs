@@ -26,14 +26,14 @@ namespace XmlFormatter.CommandLine
                     {
                         throw new Exception("Unable to parse file");
                     }
-                        
+                    var formatter = new Formatter(); 
                     switch (jsonInputDto.ActionKind)
                     {
                         case FormattingActionKind.Format:
-                            Console.Write(new Formatter().Format(jsonInputDto.XMLString, jsonInputDto.FormattingOptions));
+                            Console.Write(formatter.Format(jsonInputDto.XMLString, jsonInputDto.FormattingOptions));
                             break;
                         case FormattingActionKind.Minimize:
-                            Console.Write(new Formatter().Minimize(jsonInputDto.XMLString));
+                            Console.Write(formatter.Minimize(jsonInputDto.XMLString));
                             break;
                         default:
                             throw new Exception("Unsupported action");
@@ -41,8 +41,8 @@ namespace XmlFormatter.CommandLine
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.StackTrace);
-                    throw;
+                    Debug.WriteLine(ex.Message);
+                    //throw;
                 }
             }
         }
