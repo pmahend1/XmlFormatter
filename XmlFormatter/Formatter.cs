@@ -15,9 +15,9 @@ namespace XmlFormatter
 
         private Options currentOptions = new Options { };
 
-        private XmlDocument ConvertToXMLDocument(string input)
+        private static XmlDocument ConvertToXMLDocument(string input)
         {
-            XmlDocument xml = new XmlDocument();
+            XmlDocument xml = new();
             xml.LoadXml(input);
             return xml;
         }
@@ -157,10 +157,6 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.DocumentType:
-                    if (!string.IsNullOrWhiteSpace(node.Value))
-                    {
-                        sb.Append(Constants.DocTypeStart + Constants.Space + Constants.DocTypeEnd(node.Value));
-                    }
                     return;
 
                 case XmlNodeType.Element:

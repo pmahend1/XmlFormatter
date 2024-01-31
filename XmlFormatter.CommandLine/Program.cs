@@ -1,5 +1,6 @@
-﻿using Newtonsoft.Json;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Text.Json;
+using System.Xml;
 
 namespace XmlFormatter.CommandLine
 {
@@ -8,7 +9,7 @@ namespace XmlFormatter.CommandLine
         public static async Task Main(string[] args)
         {
             string inputString = string.Empty;
-            using (StreamReader reader = new StreamReader(Console.OpenStandardInput(), Console.InputEncoding))
+            using (StreamReader reader = new(Console.OpenStandardInput(), Console.InputEncoding))
             {
                 inputString = await reader.ReadToEndAsync().ConfigureAwait(false);
             }
@@ -21,27 +22,31 @@ namespace XmlFormatter.CommandLine
             {
                 try
                 {
-                    JsonInputDto? jsonInputDto = JsonConvert.DeserializeObject<JsonInputDto>(inputString);
+                    JsonInputDto? jsonInputDto = JsonSerializer.Deserialize<JsonInputDto>(inputString);
                     if (jsonInputDto == null || string.IsNullOrWhiteSpace(jsonInputDto.XMLString))
                     {
                         throw new Exception("Unable to parse file");
                     }
-                        
+                    var formatter = new Formatter(); 
                     switch (jsonInputDto.ActionKind)
                     {
                         case FormattingActionKind.Format:
-                            Console.Write(new Formatter().Format(jsonInputDto.XMLString, jsonInputDto.FormattingOptions));
+                            Console.Write(formatter.Format(jsonInputDto.XMLString, jsonInputDto.FormattingOptions));
                             break;
                         case FormattingActionKind.Minimize:
-                            Console.Write(new Formatter().Minimize(jsonInputDto.XMLString));
+                            Console.Write(formatter.Minimize(jsonInputDto.XMLString));
                             break;
                         default:
                             throw new Exception("Unsupported action");
                     }
                 }
+                catch(XmlException xmlException)
+                {
+                    throw new Exception($"{xmlException.Message}");
+                }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.StackTrace);
+                    Debug.WriteLine(ex.Message);
                     throw;
                 }
             }

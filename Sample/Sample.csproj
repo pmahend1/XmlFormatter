@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\XmlFormatter.VSCode\XmlFormatter.VSCode.csproj" />
+    <ProjectReference Include="..\XmlFormatter\XmlFormatter.csproj" />
   </ItemGroup>
 
   <ItemGroup>

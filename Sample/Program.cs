@@ -2,7 +2,7 @@
 using System.IO;
 using System.Xml;
 
-namespace XmlFormatter
+namespace XmlFormatter.Sample
 {
     internal class Program
     {
@@ -59,28 +59,6 @@ namespace XmlFormatter
             Console.WriteLine(text);
             Console.ResetColor();
 
-        }
-
-        private static string FooBar(string xmlStr)
-        {
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlStr);
-            StringWriter sw = new StringWriter();
-            XmlWriterSettings settings = new XmlWriterSettings
-            {
-                Indent = false,
-                IndentChars = "",
-                NewLineChars = "",
-                NewLineHandling = NewLineHandling.Replace,
-                NewLineOnAttributes = false,
-                NamespaceHandling = NamespaceHandling.Default,
-            };
-            using (XmlWriter writer = XmlWriter.Create(sw, settings))
-            {
-                xmlDoc.Save(writer);
-            }
-
-            return sw.ToString();
         }
     }
 }
