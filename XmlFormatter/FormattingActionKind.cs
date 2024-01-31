@@ -1,6 +1,12 @@
-﻿public enum FormattingActionKind
+﻿using System.Text.Json.Serialization;
+
+namespace XmlFormatter
 {
-    Unsupported,
-    Format,
-    Minimize,
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum FormattingActionKind
+    {
+        Unsupported,
+        Format,
+        Minimize,
+    }
 }

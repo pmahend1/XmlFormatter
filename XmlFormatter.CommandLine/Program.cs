@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
+using System.Xml;
 
 namespace XmlFormatter.CommandLine
 {
@@ -38,6 +39,10 @@ namespace XmlFormatter.CommandLine
                         default:
                             throw new Exception("Unsupported action");
                     }
+                }
+                catch(XmlException xmlException)
+                {
+                    throw new Exception($"{xmlException.Message}");
                 }
                 catch (Exception ex)
                 {

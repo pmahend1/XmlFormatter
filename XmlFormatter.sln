@@ -5,8 +5,6 @@ VisualStudioVersion = 17.0.31710.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample", "Sample\Sample.csproj", "{D0B94993-3A9A-46CB-9A1F-D141758B098F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlFormatter.VSCode", "XmlFormatter.VSCode\XmlFormatter.VSCode.csproj", "{DD78F753-5259-494B-BEDA-3347FDF23A94}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlFormatter", "XmlFormatter\XmlFormatter.csproj", "{D29278E3-6CC1-429B-BC4D-227F9B174E89}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlFormatter.CommandLine", "XmlFormatter.CommandLine\XmlFormatter.CommandLine.csproj", "{FD13782D-D50C-4D5C-BA4E-87D905DD611E}"
@@ -21,10 +19,6 @@ Global
 		{D0B94993-3A9A-46CB-9A1F-D141758B098F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0B94993-3A9A-46CB-9A1F-D141758B098F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0B94993-3A9A-46CB-9A1F-D141758B098F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DD78F753-5259-494B-BEDA-3347FDF23A94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD78F753-5259-494B-BEDA-3347FDF23A94}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DD78F753-5259-494B-BEDA-3347FDF23A94}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DD78F753-5259-494B-BEDA-3347FDF23A94}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D29278E3-6CC1-429B-BC4D-227F9B174E89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D29278E3-6CC1-429B-BC4D-227F9B174E89}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D29278E3-6CC1-429B-BC4D-227F9B174E89}.Release|Any CPU.ActiveCfg = Release|Any CPU
