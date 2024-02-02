@@ -61,7 +61,7 @@ namespace XmlFormatter
             {
                 var docTypeText = $"<!DOCTYPE {xml.DocumentType.Name}";
 
-                if (xml.DocumentType.Entities != null)
+                if (xml.DocumentType.Entities != null && xml.DocumentType.Entities.Count > 0)
                 {
                     var newLineOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? Environment.NewLine : "")}";
                     var tabOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? "\t" : "")}";
