@@ -11,5 +11,6 @@
         public bool AllowWhiteSpaceUnicodesInAttributeValues { get; set; } = true;
         public bool PositionFirstAttributeOnSameLine { get; set; } = true;
         public bool PreserveWhiteSpacesInComment { get; set; } = false;
+        public bool PositionAllAttributesOnFirstLine { get; set; } = false;
     }
 }

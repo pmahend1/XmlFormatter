@@ -77,7 +77,7 @@ namespace XmlFormatter
                     }
                     docTypeText += $"]";
                 }
-                
+
                 if (xml.DocumentType.PublicId != null)
                 {
                     docTypeText += $" PUBLIC \"{xml.DocumentType.PublicId}\"";
@@ -221,15 +221,18 @@ namespace XmlFormatter
                 else
                 {
                     sb.Append(Environment.NewLine);
-                    currentAttributeSpace = currentStartLength + currentOptions.IndentLength;
-                    sb.Append(new string(Constants.Space, currentAttributeSpace));
+                    if (!currentOptions.PositionAllAttributesOnFirstLine)
+                    {
+                        currentAttributeSpace = currentStartLength + currentOptions.IndentLength;
+                        sb.Append(new string(Constants.Space, currentAttributeSpace));
+                    }
                 }
 
                 for (int i = 0; i < node.Attributes.Count; i++)
                 {
                     var attribute = node.Attributes[i];
-                    var isLast = (i == (node.Attributes.Count - 1));
-                    var newline = isLast ? string.Empty : Environment.NewLine;
+                    var isLast = i == (node.Attributes.Count - 1);
+                    var newline = isLast ? string.Empty : currentOptions.PositionAllAttributesOnFirstLine ? " " : Environment.NewLine;
 
                     var attributeValue = SecurityElement.Escape(attribute.Value);
 
@@ -263,10 +266,17 @@ namespace XmlFormatter
 
                     //continue
                     if (!isLast)
-                        sb.Append(new string(Constants.Space, currentAttributeSpace));
+                    {
+                        if (!currentOptions.PositionAllAttributesOnFirstLine)
+                        {
+                            sb.Append(new string(Constants.Space, currentAttributeSpace));
+                        }
+                    }
                     //start tag end if last tag
                     else if (node.HasChildNodes)
-                        sb.Append(Constants.StartTagEnd);
+                    {
+                        sb.Append('>');
+                    }
                     //else see NoChildEndTag
                 }
             }
@@ -275,7 +285,7 @@ namespace XmlFormatter
             {
                 //start tag end if no attributes
                 if (node.HasChildNodes)
-                    sb.Append(Constants.StartTagEnd);
+                    sb.Append('>');
                 //else see NoChildEndTag
             }
 
@@ -376,7 +386,7 @@ namespace XmlFormatter
                 sw = new StringWriterWithEncoding();
             }
 
-            XmlWriterSettings settings = new XmlWriterSettings
+            var settings = new XmlWriterSettings
             {
                 Indent = false,
                 IndentChars = string.Empty,
