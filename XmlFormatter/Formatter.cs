@@ -2,6 +2,7 @@
 using System.Security;
 using System.Text;
 using System.Xml;
+using System.Xml.XPath;
 
 namespace XmlFormatter
 {
@@ -77,7 +78,7 @@ namespace XmlFormatter
                     }
                     docTypeText += $"]";
                 }
-                
+
                 if (xml.DocumentType.PublicId != null)
                 {
                     docTypeText += $" PUBLIC \"{xml.DocumentType.PublicId}\"";
@@ -93,13 +94,50 @@ namespace XmlFormatter
                 Debug.WriteLine($"DOCTYPE text: {docTypeText}");
                 sb.AppendLine(docTypeText);
             }
-            XmlElement? root = xml.DocumentElement;
-            lastNodeType = XmlNodeType.Document;
-
-            if (root != null)
+            for (int i = 0; i < xml.ChildNodes.Count; i++)
             {
-                PrintNode(root, ref sb);
+                var node = xml.ChildNodes.Item(i);
+                if (node is XmlNode xmlNode)
+                {
+                    if (xmlNode.NodeType == XmlNodeType.XmlDeclaration)
+                    {
+                        continue;
+                    }
+                    if (xmlNode.NodeType == XmlNodeType.DocumentType)
+                    {
+                        continue;
+                    }
+                    if (xmlNode.NodeType == XmlNodeType.Element)
+                    {
+                        if (xmlNode is XmlElement documentElement)
+                        {
+                            lastNodeType = XmlNodeType.Document;
+                            PrintNode(documentElement, ref sb);
+                            if (xmlNode.NextSibling != null)
+                            {
+                                sb.Append(Environment.NewLine);
+                            }
+
+                        }
+                    }
+                    else if (xmlNode.NodeType == XmlNodeType.Comment)
+                    {
+                        PrintNode(xmlNode, ref sb);
+                        sb.Append(Environment.NewLine);
+                    }
+                    else
+                    {
+                        PrintNode(xmlNode, ref sb);
+                    }
+                }
             }
+            //XmlElement? root = xml.DocumentElement;
+            //lastNodeType = XmlNodeType.Document;
+
+            //if (root != null)
+            //{
+            //    PrintNode(root, ref sb);
+            //}
             return sb.ToString();
         }
 
@@ -127,23 +165,52 @@ namespace XmlFormatter
                 case XmlNodeType.Comment:
                     if (currentOptions.PreserveWhiteSpacesInComment)
                     {
-                        sb.Append(new string(Constants.Space, currentStartLength) + node.OuterXml);
+                        if (node.ParentNode?.NodeType == XmlNodeType.Document)
+                        {
+                            sb.Append(node.OuterXml);
+                        }
+                        else
+                        {
+                            sb.Append(new string(Constants.Space, currentStartLength) + node.OuterXml);
+                        }
+
                     }
                     else if (currentOptions.WrapCommentTextWithSpaces)
                     {
-                        sb.Append(new string(Constants.Space, currentStartLength)
-                                  + Constants.CommentTagStart
-                                  + Constants.Space
-                                  + node.Value?.Trim()
-                                  + Constants.Space
-                                  + Constants.CommentTagEnd);
+                        if (node.ParentNode?.NodeType == XmlNodeType.Document)
+                        {
+                            sb.Append(Constants.CommentTagStart
+                                        + Constants.Space
+                                        + node.Value?.Trim()
+                                        + Constants.Space
+                                        + Constants.CommentTagEnd);
+                        }
+                        else
+                        {
+                            sb.Append(new string(Constants.Space, currentStartLength)
+                                      + Constants.CommentTagStart
+                                      + Constants.Space
+                                      + node.Value?.Trim()
+                                      + Constants.Space
+                                      + Constants.CommentTagEnd);
+                        }
                     }
                     else
                     {
-                        sb.Append(new string(Constants.Space, currentStartLength)
-                                  + Constants.CommentTagStart
-                                  + node.Value?.Trim()
-                                  + Constants.CommentTagEnd);
+                        if (node.ParentNode?.NodeType == XmlNodeType.Document)
+                        {
+                            sb.Append(Constants.CommentTagStart
+                                      + node.Value?.Trim()
+                                      + Constants.CommentTagEnd);
+                        }
+                        else
+                        {
+                            sb.Append(new string(Constants.Space, currentStartLength)
+                                      + Constants.CommentTagStart
+                                      + node.Value?.Trim()
+                                      + Constants.CommentTagEnd);
+                        }
+
                     }
 
                     return;
