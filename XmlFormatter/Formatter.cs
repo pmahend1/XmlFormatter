@@ -213,16 +213,20 @@ namespace XmlFormatter
             //print attributes
             if (node.Attributes?.Count > 0)
             {
-                if (currentOptions.PositionFirstAttributeOnSameLine)
+                if (currentOptions.PositionAllAttributesOnFirstLine)
                 {
                     sb.Append(Constants.Space);
-                    currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
                 }
                 else
                 {
-                    sb.Append(Environment.NewLine);
-                    if (!currentOptions.PositionAllAttributesOnFirstLine)
+                    if (currentOptions.PositionFirstAttributeOnSameLine)
                     {
+                        sb.Append(Constants.Space);
+                        currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
+                    }
+                    else
+                    {
+                        sb.Append(Environment.NewLine);
                         currentAttributeSpace = currentStartLength + currentOptions.IndentLength;
                         sb.Append(new string(Constants.Space, currentAttributeSpace));
                     }
