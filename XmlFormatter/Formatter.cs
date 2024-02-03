@@ -64,7 +64,7 @@ namespace XmlFormatter
                 if (xml.DocumentType.Entities != null && xml.DocumentType.Entities.Count > 0)
                 {
                     var newLineOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? Environment.NewLine : "")}";
-                    var tabOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? "\t" : "")}";
+                    var tabOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? new string(' ', currentOptions.IndentLength) : "")}";
                     docTypeText += $" [{newLineOrEmpty}";
 
                     for (int i = 0; i < xml.DocumentType.Entities.Count; i++)
@@ -327,8 +327,7 @@ namespace XmlFormatter
                         && lastNodeType != XmlNodeType.Text
                         && lastNodeType != XmlNodeType.CDATA
                         && lastNodeType != XmlNodeType.DocumentType
-                        && lastNodeType != XmlNodeType.EntityReference
-                        )
+                        && lastNodeType != XmlNodeType.EntityReference)
                     {
                         currentStartLength -= currentOptions.IndentLength;
                     }
