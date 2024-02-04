@@ -58,10 +58,7 @@ namespace XmlFormatter
                 lastNodeType = XmlNodeType.XmlDeclaration;
                 sb.Append(declaration.OuterXml + Constants.Newline);
             }
-            if (xml.DocumentType != null)
-            {
 
-            }
             for (int i = 0; i < xml.ChildNodes.Count; i++)
             {
                 var node = xml.ChildNodes.Item(i);
@@ -78,7 +75,7 @@ namespace XmlFormatter
                         if (xml.DocumentType.Entities != null && xml.DocumentType.Entities.Count > 0)
                         {
                             var newLineOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? Environment.NewLine : "")}";
-                            var tabOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? "\t" : "")}";
+                            var tabOrEmpty = $"{(xml.DocumentType.Entities.Count > 1 ? new string(' ', currentOptions.IndentLength) : "")}";
                             docTypeText += $" [{newLineOrEmpty}";
 
                             for (int j = 0; j < xml.DocumentType.Entities.Count; j++)
