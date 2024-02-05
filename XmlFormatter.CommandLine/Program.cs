@@ -22,7 +22,10 @@ namespace XmlFormatter.CommandLine
             {
                 try
                 {
-                    JsonInputDto? jsonInputDto = JsonSerializer.Deserialize<JsonInputDto>(inputString);
+                    JsonInputDto? jsonInputDto = JsonSerializer.Deserialize<JsonInputDto>(inputString, options: new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
                     if (jsonInputDto == null || string.IsNullOrWhiteSpace(jsonInputDto.XMLString))
                     {
                         throw new Exception("Unable to parse file");
