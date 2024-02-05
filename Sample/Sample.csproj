@@ -22,6 +22,12 @@
     <None Update="XMLFile10.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="XmlFile12.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="XmlFile11.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="XMLFile2.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

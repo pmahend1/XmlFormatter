@@ -20,6 +20,8 @@ namespace XmlFormatter.Sample
                 "XMLFile8.xml",
                 "XMLFile9.xml",
                 "XMLFile10.xml",
+                "XmlFile11.xml",
+                "XmlFile12.xml",
                 "Sample.xml",
                 "Sample2.xml",
                 "Sample3.xml",
