@@ -41,7 +41,9 @@ namespace XmlFormatter.Sample
                 WriteToConsole($"{xmlString}{Environment.NewLine}");
                 var formatter = new Formatter();
 
-                var formattedText = formatter.Format(xmlString);
+                var settings = new Options();
+
+                var formattedText = formatter.Format(xmlString, formattingOptions: settings);
                 File.WriteAllText("Formatted_" + file, formattedText.ToString());
 
                 WriteToConsole($"Formatted: {Environment.NewLine}----------", textColor: ConsoleColor.Green);
