@@ -55,7 +55,16 @@ namespace XmlFormatter
             if (declaration != null)
             {
                 lastNodeType = XmlNodeType.XmlDeclaration;
-                sb.Append(declaration.OuterXml + Constants.Newline);
+                var xmlDeclaration = "";
+                if (currentOptions.AddSpaceBeforeEndOfXmlDeclaration)
+                {
+                    xmlDeclaration = $@"<?xml {declaration.InnerText.Trim()} ?>{Environment.NewLine}";
+                }
+                else
+                {
+                    xmlDeclaration = declaration.OuterXml + Constants.Newline;
+                }
+                sb.Append(xmlDeclaration);
             }
 
             for (int i = 0; i < xml.ChildNodes.Count; i++)
