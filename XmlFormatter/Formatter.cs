@@ -255,7 +255,32 @@ namespace XmlFormatter
                     return;
 
                 case XmlNodeType.Text:
-                    sb.Append(node.OuterXml);
+                    if (!node.OuterXml.Contains(Environment.NewLine))
+                    {
+                        sb.Append(node.OuterXml);
+                    }
+                    else
+                    {
+                        var text = node.OuterXml;
+                        var lines = text.Split(Environment.NewLine);
+                        for (int i = 0; i < lines.Length; i++)
+                        {
+                            var line = lines[i];
+                            if (i == 0)
+                            {
+                                sb.Append($"{new string(' ', (currentOptions.IndentLength + currentStartLength))}{line.Trim()}");
+                            }
+                            else if (i == lines.Length - 1)
+                            {
+                                sb.Append($"{Environment.NewLine}{new string(' ', currentStartLength)}");
+                            }
+                            else
+                            {
+                                sb.Append($"{Environment.NewLine}{new string(' ', (currentOptions.IndentLength + currentStartLength))}{line.Trim()}");
+                            }
+
+                        }
+                    }
                     return;
 
                 case XmlNodeType.Whitespace:
