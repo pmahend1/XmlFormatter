@@ -266,19 +266,22 @@ namespace XmlFormatter
                         for (int i = 0; i < lines.Length; i++)
                         {
                             var line = lines[i];
-                            if (i == 0)
+                            if (i == 0 && string.IsNullOrEmpty(line.Trim()))
                             {
-                                sb.Append($"{new string(' ', (currentOptions.IndentLength + currentStartLength))}{line.Trim()}");
+                                sb.Append($"{new string(' ', currentOptions.IndentLength + currentStartLength)}{line.Trim()}");
                             }
                             else if (i == lines.Length - 1)
                             {
+                                if (!string.IsNullOrEmpty(line.Trim()))
+                                {
+                                    sb.Append($"{Environment.NewLine}{new string(' ', currentOptions.IndentLength + currentStartLength)}{line.Trim()}");
+                                }
                                 sb.Append($"{Environment.NewLine}{new string(' ', currentStartLength)}");
                             }
                             else
                             {
-                                sb.Append($"{Environment.NewLine}{new string(' ', (currentOptions.IndentLength + currentStartLength))}{line.Trim()}");
+                                sb.Append($"{Environment.NewLine}{new string(' ', currentOptions.IndentLength + currentStartLength)}{line.Trim()}");
                             }
-
                         }
                     }
                     return;

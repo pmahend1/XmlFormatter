@@ -9,7 +9,7 @@
         <description>
 			
 			
-      An in-depth look at      creating applications
+      An in-depth look at      creating applications              
       with XML.
 	  
 	  
@@ -23,7 +23,7 @@
         <price>5.95</price>
         <publish_date>2000-12-16</publish_date>
         <description>
-      A former architect battles corporate zombies,
+      A former architect battles corporate zombies,                          
       an evil sorceress, and her own childhood to become queen
       of the world.
     </description>
@@ -83,8 +83,7 @@
         <genre>Romance</genre>
         <price>4.95</price>
         <publish_date>2000-11-02</publish_date>
-        <description>
-      A deep sea diver finds true love twenty
+        <description>   A deep sea diver finds true love twenty
       thousand leagues beneath the sea.
     </description>
     </book>
@@ -94,10 +93,8 @@
         <genre>Horror</genre>
         <price>4.95</price>
         <publish_date>2000-12-06</publish_date>
-        <description>
-      An anthology of horror stories about roaches,
-      centipedes, scorpions  and other insects.
-    </description>
+        <description>An anthology of horror stories about roaches,
+      centipedes, scorpions  and other insects.</description>
     </book>
     <book id="bk109">
         <author>Kress, Peter</author>
@@ -107,7 +104,7 @@
         <publish_date>2000-11-02</publish_date>
         <description>
       After an inadvertant trip through a Heisenberg
-      Uncertainty Device, James Salway discovers the problems
+      Uncertainty Device, James Salway discovers the problems       
       of being quantum.
     </description>
     </book>
@@ -131,8 +128,7 @@
         <description>
       The Microsoft MSXML3 parser is covered in
       detail, with attention to XML DOM interfaces, XSLT processing,
-      SAX and more.
-    </description>
+      SAX and more.</description>
     </book>
     <book id="bk112">
         <author>Galos, Mike</author>
@@ -141,10 +137,10 @@
         <price>49.95</price>
         <publish_date>2001-04-16</publish_date>
         <description>
-      Microsoft Visual Studio 7 is explored in depth,
-      looking at how Visual Basic, Visual C++, C#, and ASP+ are
-      integrated into a comprehensive development
-      environment.
+Microsoft Visual Studio 7 is explored in depth,
+looking at how Visual Basic, Visual C++, C#, and ASP+ are
+integrated into a comprehensive development
+environment.
     </description>
     </book>
 </catalog>
