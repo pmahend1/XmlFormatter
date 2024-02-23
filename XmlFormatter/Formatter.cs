@@ -255,7 +255,7 @@ namespace XmlFormatter
                     return;
 
                 case XmlNodeType.Text:
-                    if (node.ParentNode?.ParentNode is XmlElement element && element.HasAttribute("xml:space"))
+                    if (node.ParentNode?.ParentNode is XmlElement element && element.HasAttribute("xml:space") && element.GetAttribute("xml:space") == "preserve")
                     {
                         sb.Append(node.OuterXml);
                     }
