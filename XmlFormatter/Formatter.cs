@@ -55,7 +55,7 @@ namespace XmlFormatter
             if (declaration != null)
             {
                 lastNodeType = XmlNodeType.XmlDeclaration;
-                var xmlDeclaration = "";
+                string? xmlDeclaration;
                 if (currentOptions.AddSpaceBeforeEndOfXmlDeclaration)
                 {
                     xmlDeclaration = $@"<?xml {declaration.InnerText.Trim()} ?>{Environment.NewLine}";
@@ -152,8 +152,9 @@ namespace XmlFormatter
                     break;
 
                 case XmlNodeType.CDATA:
-                    var newLine = (prevNode == XmlNodeType.Text) ? string.Empty : Environment.NewLine;
-                    var spaces = (prevNode == XmlNodeType.Text) ? string.Empty : new string(Constants.Space, currentStartLength);
+                    var newLine = (prevNode == XmlNodeType.Text || prevNode == XmlNodeType.Element) ? string.Empty : Environment.NewLine;
+                    var spaces = (prevNode == XmlNodeType.Text || prevNode == XmlNodeType.Element) ? string.Empty : new string(Constants.Space, currentStartLength);
+                    Debug.WriteLine($"CDATA value: {node.Value}");
                     sb.Append(newLine
                               + spaces
                               + Constants.CDataStart
@@ -254,7 +255,35 @@ namespace XmlFormatter
                     return;
 
                 case XmlNodeType.Text:
-                    sb.Append(node.OuterXml);
+                    if (!node.OuterXml.Contains(Environment.NewLine))
+                    {
+                        sb.Append(node.OuterXml);
+                    }
+                    else
+                    {
+                        var text = node.OuterXml;
+                        var lines = text.Split(Environment.NewLine);
+                        for (int i = 0; i < lines.Length; i++)
+                        {
+                            var line = lines[i];
+                            if (i == 0 && string.IsNullOrEmpty(line.Trim()))
+                            {
+                                sb.Append($"{new string(' ', currentOptions.IndentLength + currentStartLength)}{line.Trim()}");
+                            }
+                            else if (i == lines.Length - 1)
+                            {
+                                if (!string.IsNullOrEmpty(line.Trim()))
+                                {
+                                    sb.Append($"{Environment.NewLine}{new string(' ', currentOptions.IndentLength + currentStartLength)}{line.Trim()}");
+                                }
+                                sb.Append($"{Environment.NewLine}{new string(' ', currentStartLength)}");
+                            }
+                            else
+                            {
+                                sb.Append($"{Environment.NewLine}{new string(' ', currentOptions.IndentLength + currentStartLength)}{line.Trim()}");
+                            }
+                        }
+                    }
                     return;
 
                 case XmlNodeType.Whitespace:
@@ -359,8 +388,10 @@ namespace XmlFormatter
             //prints child nodes
             if (node.HasChildNodes)
             {
-                if (node.ChildNodes.Cast<XmlNode>().FirstOrDefault() is not XmlText)
+                if (node.FirstChild is XmlNode firstChild && (firstChild.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA)))
+                {
                     currentStartLength += currentOptions.IndentLength;
+                }
 
                 for (int j = 0; j < node.ChildNodes.Count; j++)
                 {
@@ -398,7 +429,8 @@ namespace XmlFormatter
                                    && lastNodeType != XmlNodeType.CDATA
                                    && lastNodeType != XmlNodeType.EntityReference) ? Constants.Newline : string.Empty;
                     var spaces = (lastNodeType != XmlNodeType.Text
-                                  && lastNodeType != XmlNodeType.EntityReference) ? new string(Constants.Space, currentStartLength) : string.Empty;
+                                  && lastNodeType != XmlNodeType.EntityReference
+                                  && lastNodeType != XmlNodeType.CDATA) ? new string(Constants.Space, currentStartLength) : string.Empty;
                     sb.Append(newLine
                               + spaces
                               + Constants.EndTagStart
