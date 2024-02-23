@@ -255,7 +255,11 @@ namespace XmlFormatter
                     return;
 
                 case XmlNodeType.Text:
-                    if (!node.OuterXml.Contains(Environment.NewLine))
+                    if (node.ParentNode?.ParentNode is XmlElement element && element.HasAttribute("xml:space"))
+                    {
+                        sb.Append(node.OuterXml);
+                    }
+                    else if (!node.OuterXml.Contains(Environment.NewLine))
                     {
                         sb.Append(node.OuterXml);
                     }
