@@ -1,9 +1,8 @@
 ﻿using System;
 using System.IO;
-using System.Xml;
 
-namespace XmlFormatter.Sample
-{
+namespace XmlFormatter.Sample;
+
     internal class Program
     {
         public static void Main(string[] args)
@@ -64,7 +63,5 @@ namespace XmlFormatter.Sample
 
             Console.WriteLine(text);
             Console.ResetColor();
-
-        }
     }
 }

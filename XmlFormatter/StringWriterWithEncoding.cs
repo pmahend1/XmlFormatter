@@ -1,27 +1,26 @@
 ﻿using System.Text;
 
-namespace XmlFormatter
+namespace XmlFormatter;
+
+public sealed class StringWriterWithEncoding : StringWriter
 {
-    public sealed class StringWriterWithEncoding : StringWriter
+    private readonly Encoding _encoding;
+
+    public StringWriterWithEncoding()
     {
-        private readonly Encoding _encoding;
+        _encoding = Encoding.UTF8;
+    }
 
-        public StringWriterWithEncoding()
-        {
+    public StringWriterWithEncoding(Encoding encoding)
+    {
+        if (encoding == null)
             _encoding = Encoding.UTF8;
-        }
+        else
+            _encoding = encoding;
+    }
 
-        public StringWriterWithEncoding(Encoding encoding)
-        {
-            if (encoding == null)
-                _encoding = Encoding.UTF8;
-            else
-                _encoding = encoding;
-        }
-
-        public override Encoding Encoding
-        {
-            get { return _encoding; }
-        }
+    public override Encoding Encoding
+    {
+        get { return _encoding; }
     }
 }
