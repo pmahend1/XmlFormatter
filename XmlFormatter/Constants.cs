@@ -1,6 +1,6 @@
 ﻿namespace XmlFormatter;
 
-public static class Constants
+public struct Constants
 {
     public const string StartTagStart = "<";
 

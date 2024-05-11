@@ -26,11 +26,11 @@ public class Formatter
     {
         try
         {
-            if (formattingOptions != null)
+            if (formattingOptions.HasValue)
             {
-                currentOptions = formattingOptions;
+                currentOptions = formattingOptions.Value;
 
-                if (formattingOptions.UseSingleQuotes)
+                if (formattingOptions.Value.UseSingleQuotes)
                 {
                     currentOptions.AllowSingleQuoteInAttributeValue = false;
                 }
