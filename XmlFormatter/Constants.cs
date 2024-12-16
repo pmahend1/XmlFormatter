@@ -14,6 +14,9 @@ public struct Constants
 
     public static readonly char Space = ' ';
 
+    /// <summary>
+    /// "<!--
+    /// </summary>
     public const string CommentTagStart = "<!--";
 
     public const string CommentTagEnd = "-->";

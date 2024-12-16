@@ -9,25 +9,26 @@ internal class Program
     {
         var files = new string[]
         {
-                "XMLFile1.xml",
-                "XMLFile2.xml",
-                "XMLFile3.xml",
-                "XMLFile4.xml",
-                "XMLFile5.xml",
-                "XMLFile6.xml",
-                "XMLFile7.xml",
-                "XMLFile8.xml",
-                "XMLFile9.xml",
-                "XMLFile10.xml",
-                "XmlFile11.xml",
-                "XmlFile12.xml",
-                "XmlFile13.xml",
-                "XmlFile14.xml",
-                "Sample.xml",
-                "Sample2.xml",
-                "Sample3.xml",
-                "Sample4.xml",
-                "ResxSample.xml"
+            "XMLFile1.xml",
+            "XMLFile2.xml",
+            "XMLFile3.xml",
+            "XMLFile4.xml",
+            "XMLFile5.xml",
+            "XMLFile6.xml",
+            "XMLFile7.xml",
+            "XMLFile8.xml",
+            "XMLFile9.xml",
+            "XMLFile10.xml",
+            "XmlFile11.xml",
+            "XmlFile12.xml",
+            "XmlFile13.xml",
+            "XmlFile14.xml",
+            "Sample.xml",
+            "Sample2.xml",
+            "Sample3.xml",
+            "Sample4.xml",
+            "ResxSample.xml",
+             "EntityGroups.xml"
         };
 
         foreach (var file in files)

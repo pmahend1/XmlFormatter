@@ -185,6 +185,13 @@ public class Formatter
                                     + Constants.Space
                                     + Constants.CommentTagEnd);
                     }
+                    else if (node.ParentNode?.NodeType == XmlNodeType.Element && 
+                             node.NextSibling?.NodeType is XmlNodeType.Text )
+                    {
+    
+                        sb.Append($"{new string(' ', currentStartLength + currentOptions.IndentLength)}<!-- {node.Value?.Trim()} -->");
+                        
+                    }
                     else
                     {
                         sb.Append(new string(Constants.Space, currentStartLength)
@@ -267,7 +274,7 @@ public class Formatter
                 {
                     var text = node.OuterXml;
                     var lines = text.Split(Environment.NewLine);
-                    for (int i = 0; i < lines.Length; i++)
+                    for (var i = 0; i < lines.Length; i++)
                     {
                         var line = lines[i];
                         if (i == 0 && string.IsNullOrEmpty(line.Trim()))
@@ -400,27 +407,36 @@ public class Formatter
         //prints child nodes
         if (node.HasChildNodes)
         {
-            if (node.FirstChild is XmlNode firstChild && (firstChild.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA)))
+            if (node.OuterXml.Equals("<!-- zombieFatCop -->"))
+            {
+                Debug.WriteLine("here");
+            }
+
+            if (node.FirstChild is { NodeType: not (XmlNodeType.Text or XmlNodeType.CDATA) })                
+                // && node.PreviousSibling?.NodeType is not XmlNodeType.Document
+                // && node.NextSibling?.NodeType is not XmlNodeType.Text
+                // && node.ParentNode?.NodeType is not XmlNodeType.Element
             {
                 currentStartLength += currentOptions.IndentLength;
             }
 
-            for (int j = 0; j < node.ChildNodes.Count; j++)
+            for (var j = 0; j < node.ChildNodes.Count; j++)
             {
                 var currentChild = node.ChildNodes[j];
-                if (currentChild is not null)
+                if (currentChild is null)
                 {
-                    if (currentChild.NodeType != XmlNodeType.Text
-                        && currentChild.NodeType != XmlNodeType.CDATA
-                        && currentChild.NodeType != XmlNodeType.EntityReference
-                        && lastNodeType != XmlNodeType.Text
-                        && currentChild.NodeType != XmlNodeType.SignificantWhitespace
-                        && currentChild.NodeType != XmlNodeType.Whitespace)
-                    {
-                        sb.Append(Constants.Newline);
-                    }
-                    PrintNode(currentChild, ref sb);
+                    continue;
                 }
+                if (currentChild.NodeType != XmlNodeType.Text
+                    && currentChild.NodeType != XmlNodeType.CDATA
+                    && currentChild.NodeType != XmlNodeType.EntityReference
+                    && lastNodeType != XmlNodeType.Text
+                    && currentChild.NodeType != XmlNodeType.SignificantWhitespace
+                    && currentChild.NodeType != XmlNodeType.Whitespace)
+                {
+                    sb.Append(Constants.Newline);
+                }
+                PrintNode(currentChild, ref sb);
             }
 
             //close tag after all child nodes
