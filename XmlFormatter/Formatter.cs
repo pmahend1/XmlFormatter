@@ -307,12 +307,14 @@ public class Formatter
 
         sb.Append(space + Constants.StartTagStart + node.Name);
 
+        var shouldAttributesSeparatedBySpace = currentOptions.PositionAllAttributesOnFirstLine is true
+                                               && (currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Count is 0
+                                                   || currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Any(pattern => Regex.IsMatch(node.Name, pattern) is false));
         //print attributes
         if (node.Attributes?.Count > 0)
         {
-            if (currentOptions is { PositionAllAttributesOnFirstLine: true, WildCardedExceptionsForPositionAllAttributesOnFirstLine: not null }
-                && currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Count > 0
-                && currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Any(pattern => Regex.IsMatch(node.Name, pattern) is false))
+
+            if (shouldAttributesSeparatedBySpace)
             {
                 sb.Append(Constants.Space);
             }
@@ -343,18 +345,19 @@ public class Formatter
             {
                 var attribute = node.Attributes[i];
                 var isLast = i == (node.Attributes.Count - 1);
-                var newLineOrSpace = isLast ? string.Empty : currentOptions.PositionAllAttributesOnFirstLine || isThresholdApplicable ? " " : Environment.NewLine;
+
+                var newLineOrSpace = isLast ? string.Empty : shouldAttributesSeparatedBySpace || isThresholdApplicable ? " " : Environment.NewLine;
 
                 var attributeValue = SecurityElement.Escape(attribute.Value);
 
                 if (currentOptions.AllowWhiteSpaceUnicodesInAttributeValues)
                 {
-                    if (attributeValue.Contains("\n"))
+                    if (attributeValue.Contains('\n'))
                     {
                         attributeValue = attributeValue.Replace("\n", "&#xA;");
                     }
 
-                    if (attributeValue.Contains("\t"))
+                    if (attributeValue.Contains('\t'))
                     {
                         attributeValue = attributeValue.Replace("\t", "&#x9;");
                     }
@@ -378,7 +381,7 @@ public class Formatter
                 //continue
                 if (!isLast)
                 {
-                    if (!currentOptions.PositionAllAttributesOnFirstLine && !isThresholdApplicable)
+                    if (currentOptions.PositionAllAttributesOnFirstLine is false && isThresholdApplicable is false)
                     {
                         sb.Append(new string(Constants.Space, currentAttributeSpace));
                     }
