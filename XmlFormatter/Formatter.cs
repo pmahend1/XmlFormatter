@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Security;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace XmlFormatter;
@@ -152,8 +153,8 @@ public class Formatter
                 break;
 
             case XmlNodeType.CDATA:
-                var newLine = (prevNode == XmlNodeType.Text || prevNode == XmlNodeType.Element) ? string.Empty : Environment.NewLine;
-                var spaces = (prevNode == XmlNodeType.Text || prevNode == XmlNodeType.Element) ? string.Empty : new string(Constants.Space, currentStartLength);
+                var newLine = (prevNode is XmlNodeType.Text or XmlNodeType.Element) ? string.Empty : Environment.NewLine;
+                var spaces = (prevNode is XmlNodeType.Text or XmlNodeType.Element) ? string.Empty : new string(Constants.Space, currentStartLength);
                 Debug.WriteLine($"CDATA value: {node.Value}");
                 sb.Append(newLine
                           + spaces
@@ -309,7 +310,9 @@ public class Formatter
         //print attributes
         if (node.Attributes?.Count > 0)
         {
-            if (currentOptions.PositionAllAttributesOnFirstLine)
+            if (currentOptions is { PositionAllAttributesOnFirstLine: true, WildCardedExceptionsForPositionAllAttributesOnFirstLine: not null }
+                && currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Count > 0
+                && currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Any(pattern => Regex.IsMatch(node.Name, pattern) is false))
             {
                 sb.Append(Constants.Space);
             }
