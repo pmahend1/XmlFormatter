@@ -307,9 +307,9 @@ public class Formatter
 
         sb.Append(space + Constants.StartTagStart + node.Name);
 
-        var wildCardExceptionForAllAttributesOnFirstLineExist = currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Any(pattern => Regex.IsMatch(node.Name, pattern) is false);
+        var wildCardExceptionForAllAttributesOnFirstLineExist = currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Any(pattern => Regex.IsMatch(node.Name, pattern));
         var shouldAttributesSeparatedBySpace = currentOptions.PositionAllAttributesOnFirstLine
-                                               && (currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Count is 0 || wildCardExceptionForAllAttributesOnFirstLineExist);
+                                               && (currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Count is 0 || wildCardExceptionForAllAttributesOnFirstLineExist is false);
         //print attributes
         if (node.Attributes?.Count > 0)
         {
