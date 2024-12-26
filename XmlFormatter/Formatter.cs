@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Security;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace XmlFormatter;
@@ -152,8 +153,8 @@ public class Formatter
                 break;
 
             case XmlNodeType.CDATA:
-                var newLine = (prevNode == XmlNodeType.Text || prevNode == XmlNodeType.Element) ? string.Empty : Environment.NewLine;
-                var spaces = (prevNode == XmlNodeType.Text || prevNode == XmlNodeType.Element) ? string.Empty : new string(Constants.Space, currentStartLength);
+                var newLine = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : Environment.NewLine;
+                var spaces = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : new string(Constants.Space, currentStartLength);
                 Debug.WriteLine($"CDATA value: {node.Value}");
                 sb.Append(newLine
                           + spaces
@@ -306,12 +307,19 @@ public class Formatter
 
         sb.Append(space + Constants.StartTagStart + node.Name);
 
+        var wildCardExceptionForAllAttributesOnFirstLineExist = currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Any(pattern => Regex.IsMatch(node.Name, pattern));
+        var shouldAttributesSeparatedBySpace = currentOptions.PositionAllAttributesOnFirstLine
+                                               && (currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Count is 0 || wildCardExceptionForAllAttributesOnFirstLineExist is false);
         //print attributes
         if (node.Attributes?.Count > 0)
         {
-            if (currentOptions.PositionAllAttributesOnFirstLine)
+            if (shouldAttributesSeparatedBySpace)
             {
                 sb.Append(Constants.Space);
+                if (wildCardExceptionForAllAttributesOnFirstLineExist)
+                {
+                    currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
+                }
             }
             else
             {
@@ -336,22 +344,23 @@ public class Formatter
             }
 
             var isThresholdApplicable = currentOptions.PositionFirstAttributeOnSameLine && node.Attributes.Count <= currentOptions.AttributesInNewlineThreshold;
-            for (int i = 0; i < node.Attributes.Count; i++)
+            for (var i = 0; i < node.Attributes.Count; i++)
             {
                 var attribute = node.Attributes[i];
-                var isLast = i == (node.Attributes.Count - 1);
-                var newLineOrSpace = isLast ? string.Empty : currentOptions.PositionAllAttributesOnFirstLine || isThresholdApplicable ? " " : Environment.NewLine;
+                var isLast = i == node.Attributes.Count - 1;
+
+                var newLineOrSpace = isLast ? string.Empty : shouldAttributesSeparatedBySpace || isThresholdApplicable ? " " : Environment.NewLine;
 
                 var attributeValue = SecurityElement.Escape(attribute.Value);
 
                 if (currentOptions.AllowWhiteSpaceUnicodesInAttributeValues)
                 {
-                    if (attributeValue.Contains("\n"))
+                    if (attributeValue.Contains('\n'))
                     {
                         attributeValue = attributeValue.Replace("\n", "&#xA;");
                     }
 
-                    if (attributeValue.Contains("\t"))
+                    if (attributeValue.Contains('\t'))
                     {
                         attributeValue = attributeValue.Replace("\t", "&#x9;");
                     }
@@ -373,9 +382,9 @@ public class Formatter
                           + newLineOrSpace);
 
                 //continue
-                if (!isLast)
+                if (isLast is false)
                 {
-                    if (!currentOptions.PositionAllAttributesOnFirstLine && !isThresholdApplicable)
+                    if (shouldAttributesSeparatedBySpace is false && isThresholdApplicable is false)
                     {
                         sb.Append(new string(Constants.Space, currentAttributeSpace));
                     }
@@ -393,56 +402,59 @@ public class Formatter
         {
             //start tag end if no attributes
             if (node.HasChildNodes)
+            {
                 sb.Append('>');
+            }
             //else see NoChildEndTag
         }
 
         //prints child nodes
         if (node.HasChildNodes)
         {
-            if (node.FirstChild is XmlNode firstChild && (firstChild.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA)))
+            if (node.FirstChild is { NodeType: not (XmlNodeType.Text or XmlNodeType.CDATA) })
             {
                 currentStartLength += currentOptions.IndentLength;
             }
 
-            for (int j = 0; j < node.ChildNodes.Count; j++)
+            for (var j = 0; j < node.ChildNodes.Count; j++)
             {
                 var currentChild = node.ChildNodes[j];
-                if (currentChild is not null)
+                if (currentChild is null)
                 {
-                    if (currentChild.NodeType != XmlNodeType.Text
-                        && currentChild.NodeType != XmlNodeType.CDATA
-                        && currentChild.NodeType != XmlNodeType.EntityReference
-                        && lastNodeType != XmlNodeType.Text
-                        && currentChild.NodeType != XmlNodeType.SignificantWhitespace
-                        && currentChild.NodeType != XmlNodeType.Whitespace)
-                    {
-                        sb.Append(Constants.Newline);
-                    }
-                    PrintNode(currentChild, ref sb);
+                    continue;
                 }
+                if (currentChild.NodeType is not XmlNodeType.Text
+                                         and not XmlNodeType.CDATA
+                                         and not XmlNodeType.EntityReference
+                                         and not XmlNodeType.SignificantWhitespace
+                                         and not XmlNodeType.Whitespace
+                    && lastNodeType != XmlNodeType.Text)
+                {
+                    sb.Append(Constants.Newline);
+                }
+                PrintNode(currentChild, ref sb);
             }
 
             //close tag after all child nodes
-            if (node.NodeType != XmlNodeType.Comment
-                && node.NodeType != XmlNodeType.CDATA
-                && node.NodeType != XmlNodeType.DocumentType
-                && node.NodeType != XmlNodeType.Text)
+            if (node.NodeType is not XmlNodeType.Comment
+                             and not XmlNodeType.CDATA
+                             and not XmlNodeType.DocumentType
+                             and not XmlNodeType.Text)
             {
                 if (currentStartLength >= currentOptions.IndentLength
-                    && lastNodeType != XmlNodeType.Text
-                    && lastNodeType != XmlNodeType.CDATA
-                    && lastNodeType != XmlNodeType.DocumentType
-                    && lastNodeType != XmlNodeType.EntityReference)
+                    && lastNodeType is not XmlNodeType.Text
+                                   and not XmlNodeType.CDATA
+                                   and not XmlNodeType.DocumentType
+                                   and not XmlNodeType.EntityReference)
                 {
                     currentStartLength -= currentOptions.IndentLength;
                 }
-                var newLine = (lastNodeType != XmlNodeType.Text
-                               && lastNodeType != XmlNodeType.CDATA
-                               && lastNodeType != XmlNodeType.EntityReference) ? Constants.Newline : string.Empty;
-                var spaces = (lastNodeType != XmlNodeType.Text
-                              && lastNodeType != XmlNodeType.EntityReference
-                              && lastNodeType != XmlNodeType.CDATA) ? new string(Constants.Space, currentStartLength) : string.Empty;
+                var newLine = lastNodeType is not XmlNodeType.Text
+                                                and not XmlNodeType.CDATA
+                                                and not XmlNodeType.EntityReference  ? Constants.Newline : string.Empty;
+                var spaces = lastNodeType is not XmlNodeType.Text 
+                                               and not XmlNodeType.EntityReference 
+                                               and not XmlNodeType.CDATA ? new string(Constants.Space, currentStartLength) : string.Empty;
                 sb.Append(newLine
                           + spaces
                           + Constants.EndTagStart
@@ -454,7 +466,7 @@ public class Formatter
 
             Debug.WriteLine(node.Name + " with value " + node.Value);
         }
-        //if no childs endtag
+        //if no children end tag
         #region NoChildEndTag
 
         else if (currentOptions.UseSelfClosingTags)
@@ -475,26 +487,16 @@ public class Formatter
         }
 
         #endregion NoChildEndTag
-
-        return;
     }
 
     public string Minimize(string xmlString)
     {
         var xmlDoc = ConvertToXMLDocument(xmlString);
 
+        // ReSharper disable once SuggestVarOrType_SimpleTypes
         XmlDeclaration? declaration = xmlDoc.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
 
-        StringWriter sw;
-
-        if (!string.IsNullOrEmpty(declaration?.Encoding))
-        {
-            sw = new StringWriterWithEncoding(Encoding.GetEncoding(declaration.Encoding));
-        }
-        else
-        {
-            sw = new StringWriterWithEncoding();
-        }
+        StringWriter sw = string.IsNullOrEmpty(declaration?.Encoding) is false ? new StringWriterWithEncoding(Encoding.GetEncoding(declaration.Encoding)) : new StringWriterWithEncoding();
 
         var settings = new XmlWriterSettings
         {
@@ -505,7 +507,7 @@ public class Formatter
             NewLineOnAttributes = false,
             NamespaceHandling = NamespaceHandling.OmitDuplicates,
         };
-        using (XmlWriter writer = XmlWriter.Create(sw, settings))
+        using (var writer = XmlWriter.Create(sw, settings))
         {
             xmlDoc.Save(writer);
         }
