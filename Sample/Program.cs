@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 
 namespace XmlFormatter.Sample;
 
@@ -9,25 +10,25 @@ internal class Program
     {
         var files = new string[]
         {
-                "XMLFile1.xml",
-                "XMLFile2.xml",
-                "XMLFile3.xml",
-                "XMLFile4.xml",
-                "XMLFile5.xml",
-                "XMLFile6.xml",
-                "XMLFile7.xml",
-                "XMLFile8.xml",
-                "XMLFile9.xml",
-                "XMLFile10.xml",
-                "XmlFile11.xml",
-                "XmlFile12.xml",
-                "XmlFile13.xml",
-                "XmlFile14.xml",
+                // "XMLFile1.xml",
+                // "XMLFile2.xml",
+                // "XMLFile3.xml",
+                // "XMLFile4.xml",
+                // "XMLFile5.xml",
+                // "XMLFile6.xml",
+                // "XMLFile7.xml",
+                // "XMLFile8.xml",
+                // "XMLFile9.xml",
+                // "XMLFile10.xml",
+                // "XmlFile11.xml",
+                // "XmlFile12.xml",
+                // "XmlFile13.xml",
+                // "XmlFile14.xml",
                 "Sample.xml",
                 "Sample2.xml",
                 "Sample3.xml",
                 "Sample4.xml",
-                "ResxSample.xml"
+                //"ResxSample.xml"
         };
 
         foreach (var file in files)
@@ -45,7 +46,7 @@ internal class Program
             var settings = new Options();
 
             var formattedText = formatter.Format(xmlString, formattingOptions: settings);
-            File.WriteAllText("Formatted_" + file, formattedText.ToString());
+            File.WriteAllText("Formatted_" + file, formattedText, Encoding.UTF8);
 
             WriteToConsole($"Formatted: {Environment.NewLine}----------", textColor: ConsoleColor.Green);
 
