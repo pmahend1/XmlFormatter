@@ -59,13 +59,13 @@ public partial class Formatter
             Indent = true,
             NewLineHandling = NewLineHandling.Entitize,
             Encoding = Encoding.UTF8,
-            ConformanceLevel = ConformanceLevel.Document
+            ConformanceLevel = ConformanceLevel.Fragment
         };
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using (var xmlReader = XmlReader.Create(stream, new XmlReaderSettings()
-               {
-                   DtdProcessing = DtdProcessing.Parse
-               }))
+        {
+            DtdProcessing = DtdProcessing.Parse
+        }))
         {
             using (var writer = XmlWriter.Create(sb, ws))
             {
@@ -107,6 +107,8 @@ public partial class Formatter
                             break;
                         case XmlNodeType.Attribute:
                             Debug.WriteLine("Attribute");
+
+                            writer.WriteAttributeString(xmlReader.Name, xmlReader.Value);
                             writer.WriteAttributes(xmlReader, false);
                             break;
                         case XmlNodeType.CDATA:
