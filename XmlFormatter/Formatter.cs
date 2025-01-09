@@ -6,7 +6,7 @@ using System.Xml;
 
 namespace XmlFormatter;
 
-public class Formatter
+public partial class Formatter
 {
     private int currentAttributeSpace = 0;
 
@@ -58,7 +58,8 @@ public class Formatter
         {
             Indent = true,
             NewLineHandling = NewLineHandling.Entitize,
-            Encoding = Encoding.UTF8
+            Encoding = Encoding.UTF8,
+            ConformanceLevel = ConformanceLevel.Document
         };
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(input));
         using (var xmlReader = XmlReader.Create(stream, new XmlReaderSettings()
@@ -74,7 +75,7 @@ public class Formatter
                     switch (xmlReader.NodeType)
                     {
                         case XmlNodeType.Element:
-                            writer.WriteStartElement(xmlReader.Name);
+                            writer.WriteElementString(xmlReader.Name, xmlReader.Value);
                             break;
                         case XmlNodeType.Text:
                             writer.WriteString(xmlReader.Value);
@@ -99,11 +100,14 @@ public class Formatter
                             writer.WriteComment(xmlReader.Value);
                             break;
                         case XmlNodeType.EndElement:
-                            writer.WriteFullEndElement();
+                            //writer.WriteEndElement();
+                            writer.WriteString("\n");
                             break;
                         case XmlNodeType.None:
                             break;
                         case XmlNodeType.Attribute:
+                            Debug.WriteLine("Attribute");
+                            writer.WriteAttributes(xmlReader, false);
                             break;
                         case XmlNodeType.CDATA:
                             break;
@@ -120,8 +124,12 @@ public class Formatter
                         case XmlNodeType.Notation:
                             break;
                         case XmlNodeType.Whitespace:
+                            Debug.WriteLine("whitespace");
+                            var cleanedNewline = NonNewLineRegex().Replace(xmlReader.Value, string.Empty);
+                            writer.WriteWhitespace(cleanedNewline);
                             break;
                         case XmlNodeType.SignificantWhitespace:
+                            Debug.WriteLine("significant whitespace");
                             break;
                         case XmlNodeType.EndEntity:
                             break;
@@ -641,4 +649,7 @@ public class Formatter
 
         return sw.ToString();
     }
+
+    [GeneratedRegex(@"[^\P{C}\n]+")]
+    private static partial Regex NonNewLineRegex();
 }

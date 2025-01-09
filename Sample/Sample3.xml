@@ -8,6 +8,9 @@
              _description="XML Formatter for VS Mac"
              defaultHandler="PrettyXML.VSMac.PrettyXMLCommands.FormatXML" />
   </Extension>
+  
+  
+  
   <Extension path="/MonoDevelop/Ide/Commands/Edit">
     <Command id="PrettyXML.VSMac.PrettyXMLCommands.FormatXML"
              _label="Prettify XML command edit"

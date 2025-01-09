@@ -4,6 +4,7 @@
 <Items>
     <Item>Test with an entity: &number;</Item>
     <Item>Test with a child element <more /> stuff</Item>
+    
 <Item>Test with a CDATA section <![CDATA[<456>]]> def</Item>
     <Item>Test with a char entity: A</Item>
     <Item>1234567890ABCD</Item>
