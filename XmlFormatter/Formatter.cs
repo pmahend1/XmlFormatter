@@ -428,11 +428,20 @@ public class Formatter
                                          and not XmlNodeType.EntityReference
                                          and not XmlNodeType.SignificantWhitespace
                                          and not XmlNodeType.Whitespace
-                    && lastNodeType != XmlNodeType.Text)
+                    && lastNodeType is not  XmlNodeType.Text)
                 {
                     sb.Append(Constants.Newline);
                 }
                 PrintNode(currentChild, ref sb);
+                if (currentChild.NodeType is not XmlNodeType.Text
+                                         and not XmlNodeType.CDATA
+                                         and not XmlNodeType.EntityReference
+                                         and not XmlNodeType.SignificantWhitespace
+                                         and not XmlNodeType.Whitespace
+                    && lastNodeType is not  XmlNodeType.Text and not XmlNodeType.Element && currentOptions.AddEmptyLineBetweenElements && node.ChildNodes.Count > 1 &&  j < node.ChildNodes.Count - 1)
+                {
+                    sb.AppendLine();
+                }
             }
 
             //close tag after all child nodes
@@ -451,9 +460,9 @@ public class Formatter
                 }
                 var newLine = lastNodeType is not XmlNodeType.Text
                                                 and not XmlNodeType.CDATA
-                                                and not XmlNodeType.EntityReference  ? Constants.Newline : string.Empty;
-                var spaces = lastNodeType is not XmlNodeType.Text 
-                                               and not XmlNodeType.EntityReference 
+                                                and not XmlNodeType.EntityReference ? Constants.Newline : string.Empty;
+                var spaces = lastNodeType is not XmlNodeType.Text
+                                               and not XmlNodeType.EntityReference
                                                and not XmlNodeType.CDATA ? new string(Constants.Space, currentStartLength) : string.Empty;
                 sb.Append(newLine
                           + spaces
@@ -461,10 +470,12 @@ public class Formatter
                           + node.Name
                           + Constants.EndTagEnd);
 
+
                 lastNodeType = node.NodeType;
             }
 
             Debug.WriteLine(node.Name + " with value " + node.Value);
+
         }
         //if no children end tag
         #region NoChildEndTag
@@ -485,6 +496,7 @@ public class Formatter
         {
             sb.AppendFormat($"></{node.Name}>");
         }
+
 
         #endregion NoChildEndTag
     }

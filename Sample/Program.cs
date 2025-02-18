@@ -42,7 +42,10 @@ internal class Program
             WriteToConsole($"{xmlString}{Environment.NewLine}");
             var formatter = new Formatter();
 
-            var settings = new Options();
+            var settings = new Options()
+            {
+                AddEmptyLineBetweenElements = true
+            };
 
             var formattedText = formatter.Format(xmlString, formattingOptions: settings);
             File.WriteAllText("Formatted_" + file, formattedText.ToString());
