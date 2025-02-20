@@ -17,4 +17,5 @@ public struct Options
     public bool AddSpaceBeforeEndOfXmlDeclaration { get; set; } = false;
     public int AttributesInNewlineThreshold { get; set; } = 1;
     public List<string> WildCardedExceptionsForPositionAllAttributesOnFirstLine { get; init; } = [];
+    public bool AddEmptyLineBetweenElements { get; set; } = false;
 }
