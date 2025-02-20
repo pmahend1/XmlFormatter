@@ -428,17 +428,17 @@ public class Formatter
                                          and not XmlNodeType.EntityReference
                                          and not XmlNodeType.SignificantWhitespace
                                          and not XmlNodeType.Whitespace
-                    && lastNodeType is not  XmlNodeType.Text)
+                    && lastNodeType is not XmlNodeType.Text)
                 {
                     sb.Append(Constants.Newline);
                 }
                 PrintNode(currentChild, ref sb);
-                if (currentChild.NodeType is not XmlNodeType.Text
-                                         and not XmlNodeType.CDATA
-                                         and not XmlNodeType.EntityReference
-                                         and not XmlNodeType.SignificantWhitespace
-                                         and not XmlNodeType.Whitespace
-                    && lastNodeType is not  XmlNodeType.Text and not XmlNodeType.Element && currentOptions.AddEmptyLineBetweenElements && node.ChildNodes.Count > 1 &&  j < node.ChildNodes.Count - 1)
+
+                if (currentOptions.AddEmptyLineBetweenElements
+                    && currentChild.NodeType is XmlNodeType.Element
+                    && currentChild.NextSibling?.NodeType is not XmlNodeType.Text and not XmlNodeType.SignificantWhitespace
+                    && node.ChildNodes.Count > 2
+                    && j < node.ChildNodes.Count - 1)
                 {
                     sb.AppendLine();
                 }
