@@ -23,6 +23,7 @@ internal class Program
                 "XmlFile12.xml",
                 "XmlFile13.xml",
                 "XmlFile14.xml",
+                "XmlFile15.xml",
                 "Sample.xml",
                 "Sample2.xml",
                 "Sample3.xml",

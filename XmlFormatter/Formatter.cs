@@ -249,7 +249,7 @@ public class Formatter
                 break;
 
             case XmlNodeType.ProcessingInstruction:
-                sb.Append($"<?{node.Name} {node.Value}?>");
+                sb.AppendLine($"<?{node.Name} {node.Value}?>");
                 return;
 
             case XmlNodeType.SignificantWhitespace:
@@ -458,10 +458,10 @@ public class Formatter
                 {
                     currentStartLength -= currentOptions.IndentLength;
                 }
-                var newLine = lastNodeType is not XmlNodeType.Text 
-                                          and not XmlNodeType.CDATA 
+                var newLine = lastNodeType is not XmlNodeType.Text
+                                          and not XmlNodeType.CDATA
                                           and not XmlNodeType.EntityReference ? Constants.Newline : string.Empty;
-                var spaces = lastNodeType is not XmlNodeType.Text 
+                var spaces = lastNodeType is not XmlNodeType.Text
                                          and not XmlNodeType.EntityReference
                                          and not XmlNodeType.CDATA ? new string(Constants.Space, currentStartLength) : string.Empty;
                 sb.Append(newLine
