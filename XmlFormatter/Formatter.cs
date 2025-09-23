@@ -53,19 +53,23 @@ public class Formatter
 
         XmlDeclaration? declaration = xml.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
 
-        if (declaration != null)
+        if (declaration is not null)
         {
             lastNodeType = XmlNodeType.XmlDeclaration;
             string? xmlDeclaration;
             if (currentOptions.AddSpaceBeforeEndOfXmlDeclaration)
             {
-                xmlDeclaration = $@"<?xml {declaration.InnerText.Trim()} ?>{Environment.NewLine}";
+                xmlDeclaration = $"<?xml {declaration.InnerText.Trim()} ?>{Environment.NewLine}";
             }
             else
             {
-                xmlDeclaration = declaration.OuterXml + Constants.Newline;
+                xmlDeclaration = declaration.OuterXml + Environment.NewLine;
             }
             sb.Append(xmlDeclaration);
+        }
+        else if (currentOptions.AddXmlDeclarationIfMissing)
+        {
+            sb.AppendLine(Constants.XmlDeclaration); ;
         }
 
         for (int i = 0; i < xml.ChildNodes.Count; i++)
@@ -430,7 +434,7 @@ public class Formatter
                                          and not XmlNodeType.Whitespace
                     && lastNodeType is not XmlNodeType.Text)
                 {
-                    sb.Append(Constants.Newline);
+                    sb.Append(Environment.NewLine);
                 }
                 PrintNode(currentChild, ref sb);
 
@@ -460,7 +464,7 @@ public class Formatter
                 }
                 var newLine = lastNodeType is not XmlNodeType.Text
                                           and not XmlNodeType.CDATA
-                                          and not XmlNodeType.EntityReference ? Constants.Newline : string.Empty;
+                                          and not XmlNodeType.EntityReference ? Environment.NewLine : string.Empty;
                 var spaces = lastNodeType is not XmlNodeType.Text
                                          and not XmlNodeType.EntityReference
                                          and not XmlNodeType.CDATA ? new string(Constants.Space, currentStartLength) : string.Empty;

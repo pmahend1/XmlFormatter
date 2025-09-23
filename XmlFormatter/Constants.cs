@@ -34,7 +34,7 @@ public struct Constants
 
     public static string DocTypeEnd(string val) => string.Format("[{0}]", val);
 
-    public static readonly string Newline = Environment.NewLine;
-
     public const string Apos = "&apos;";
+
+    public const string XmlDeclaration = @"<?xml version=""1.0"" encoding=""UTF-8"" ?>";
 }
