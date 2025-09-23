@@ -1,6 +1,6 @@
 ﻿namespace XmlFormatter;
 
-public struct Options
+public record struct Options
 {
     public Options() { }
 
@@ -15,6 +15,7 @@ public struct Options
     public bool PreserveWhiteSpacesInComment { get; set; } = false;
     public bool PositionAllAttributesOnFirstLine { get; set; } = false;
     public bool AddSpaceBeforeEndOfXmlDeclaration { get; set; } = false;
+    public bool AddXmlDeclarationIfMissing { get; set; } = true;
     public int AttributesInNewlineThreshold { get; set; } = 1;
     public List<string> WildCardedExceptionsForPositionAllAttributesOnFirstLine { get; init; } = [];
     public bool AddEmptyLineBetweenElements { get; set; } = false;
