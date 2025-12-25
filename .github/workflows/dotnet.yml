@@ -22,11 +22,11 @@ jobs:
         run: |
           [XML]$xml = Get-Content .\XmlFormatter.CommandLine\XmlFormatter.CommandLine.csproj
           $version = $xml.Project.PropertyGroup.Version
-          $zipFile = "XmlFormatter.CommandLine_v$version.zip"
+          $zipFile = "XmlFormatter.CommandLine_v$version"
           Compress-Archive -Path .\XmlFormatter.CommandLine\bin\Release\*\* -DestinationPath $zipFile
           "ZIP_FILENAME=$zipFile" >> $env:GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.archive.outputs.ZIP_FILENAME }}
-          path: ${{ steps.archive.outputs.ZIP_FILENAME }}
+          path: .\XmlFormatter.CommandLine\bin\Release\**\*
