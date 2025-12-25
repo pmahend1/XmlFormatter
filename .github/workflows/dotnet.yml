@@ -15,19 +15,20 @@ jobs:
         uses: actions/setup-dotnet@v5
 
       - name: Build
-        run: dotnet build --configuration Release
+        run: dotnet publish
 
       - name: Archive
         id: archive
         run: |
           [XML]$xml = Get-Content .\XmlFormatter.CommandLine\XmlFormatter.CommandLine.csproj
           $version = $xml.Project.PropertyGroup.Version
-          $zipFile = "XmlFormatter.CommandLine_v$version.zip"
-          Compress-Archive -Path .\XmlFormatter.CommandLine\bin\Release\*\* -DestinationPath $zipFile
+          $targetFramework = $xml.Project.PropertyGroup.TargetFramework
+          $zipFile = "XmlFormatter.CommandLine_v$version"
+          $artifactPath = ".\XmlFormatter.CommandLine\bin\Release\$targetFramework\publish\*"
           "ZIP_FILENAME=$zipFile" >> $env:GITHUB_OUTPUT
+          "ARTIFACT_PATH=$artifactPath" >> $env:GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.archive.outputs.ZIP_FILENAME }}
-          path: ${{ steps.archive.outputs.ZIP_FILENAME }}
-          compression-level: 0
+          path: ${{ steps.archive.outputs.ARTIFACT_PATH }}
