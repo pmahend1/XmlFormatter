@@ -19,4 +19,5 @@ public record struct Options
     public int AttributesInNewlineThreshold { get; set; } = 1;
     public List<string> WildCardedExceptionsForPositionAllAttributesOnFirstLine { get; init; } = [];
     public bool AddEmptyLineBetweenElements { get; set; } = false;
+    public bool PreserveNewLines { get; set; } = false;
 }

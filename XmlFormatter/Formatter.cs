@@ -6,7 +6,7 @@ using System.Xml;
 
 namespace XmlFormatter;
 
-public class Formatter
+public partial class Formatter
 {
     private int currentAttributeSpace = 0;
 
@@ -14,11 +14,18 @@ public class Formatter
 
     private XmlNodeType lastNodeType;
 
-    private Options currentOptions = new Options { };
+    private Options currentOptions = new();
 
-    private static XmlDocument ConvertToXMLDocument(string input)
+
+    [GeneratedRegex(@"(?:\r?\n\s*){2,}")]
+    private static partial Regex MultiNewLinesRegex();
+
+    private static XmlDocument ConvertToXMLDocument(string input, bool preserveNewLines = false)
     {
-        XmlDocument xml = new();
+        XmlDocument xml = new()
+        {
+            PreserveWhitespace = preserveNewLines
+        };
         xml.LoadXml(input);
         return xml;
     }
@@ -30,13 +37,12 @@ public class Formatter
             if (formattingOptions.HasValue)
             {
                 currentOptions = formattingOptions.Value;
-
                 if (formattingOptions.Value.UseSingleQuotes)
                 {
                     currentOptions.AllowSingleQuoteInAttributeValue = false;
                 }
             }
-            var xmlDocument = ConvertToXMLDocument(input);
+            var xmlDocument = ConvertToXMLDocument(input: input, preserveNewLines: currentOptions.PreserveNewLines);
             var formattedXML = FormatXMLDocument(xmlDocument);
             return formattedXML;
         }
@@ -294,8 +300,17 @@ public class Formatter
                     }
                 }
                 return;
-
             case XmlNodeType.Whitespace:
+
+                if (currentOptions.PreserveNewLines && string.IsNullOrEmpty(node.Value) is false)
+                {
+                    var newlineRegex = new Regex(Environment.NewLine);
+                    var newText = newlineRegex.Replace(input: node.Value, replacement: string.Empty, count: 1);
+                    if (MultiNewLinesRegex().IsMatch(node.Value))
+                    {
+                        sb.Append(newText);
+                    }
+                }
                 return;
 
             case XmlNodeType.XmlDeclaration:
