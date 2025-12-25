@@ -3,8 +3,6 @@ name: Bundle Binaries
 on:
   push:
     branches: ["main"]
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
@@ -18,30 +16,22 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
 
-      - name: Dotnet Build
-        if: github.ref_type != 'tag'
-        run: dotnet build --configuration Release
-
       - name: Dotnet Publish
-        if: github.ref_type == 'tag'
         run: dotnet publish
 
       - name: Artifact Bundle
-        if: github.ref_type == 'tag'
         id: bundle
         run: |
           [XML]$xml = Get-Content .\XmlFormatter.CommandLine\XmlFormatter.CommandLine.csproj
           $version = $xml.Project.PropertyGroup.Version
           $targetFramework = $xml.Project.PropertyGroup.TargetFramework
-          $zipFile = "XmlFormatter.CommandLine_v$version.zip"
-          $artifactPath = "./XmlFormatter.CommandLine/bin/Release/$targetFramework/publish/*"
-          Compress-Archive -Path $artifactPath -DestinationPath $zipFile
+          $zipFile = "XmlFormatter.CommandLine_v$version"
+          $artifactPath = ".\XmlFormatter.CommandLine\bin\Release\$targetFramework\publish\*"
           "ZIP_FILENAME=$zipFile" >> $env:GITHUB_OUTPUT
           "ARTIFACT_PATH=$artifactPath" >> $env:GITHUB_OUTPUT
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
-        if: github.ref_type == 'tag'
         with:
           name: ${{ steps.bundle.outputs.ZIP_FILENAME }}
           path: ${{ steps.bundle.outputs.ARTIFACT_PATH }}
@@ -50,5 +40,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          generate_release_notes: true
-          files: ${{ steps.bundle.outputs.ZIP_FILENAME }}
+          files: ${{ steps.bundle.outputs.ARTIFACT_PATH }}
