@@ -23,7 +23,6 @@ jobs:
           [XML]$xml = Get-Content .\XmlFormatter.CommandLine\XmlFormatter.CommandLine.csproj
           $version = $xml.Project.PropertyGroup.Version
           $zipFile = "XmlFormatter.CommandLine_v$version"
-          Compress-Archive -Path .\XmlFormatter.CommandLine\bin\Release\*\* -DestinationPath $zipFile
           "ZIP_FILENAME=$zipFile" >> $env:GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v6
