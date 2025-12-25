@@ -3,6 +3,8 @@ name: Bundle Binaries
 on:
   push:
     branches: ["main"]
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
@@ -16,10 +18,15 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
 
+      - name: Dotnet Build
+        run: dotnet build --configuration Release
+
       - name: Dotnet Publish
+        if: github.ref_type == 'tag'
         run: dotnet publish
 
       - name: Artifact Bundle
+        if: github.ref_type == 'tag'
         id: bundle
         run: |
           [XML]$xml = Get-Content .\XmlFormatter.CommandLine\XmlFormatter.CommandLine.csproj
@@ -32,6 +39,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
+        if: github.ref_type == 'tag'
         with:
           name: ${{ steps.bundle.outputs.ZIP_FILENAME }}
           path: ${{ steps.bundle.outputs.ARTIFACT_PATH }}
@@ -40,4 +48,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: ${{ steps.bundle.outputs.ARTIFACT_PATH }}
+          files: |
+            ${{ steps.bundle.outputs.ARTIFACT_PATH }}
