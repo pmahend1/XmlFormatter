@@ -1,0 +1,33 @@
+name: Bundle Binaries
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Archive
+        id: archive
+        run: |
+          [XML]$xml = Get-Content .\XmlFormatter.CommandLine\XmlFormatter.CommandLine.csproj
+          $version = $xml.Project.PropertyGroup.Version
+          $zipFile = "XmlFormatter.CommandLine_v$version.zip"
+          Compress-Archive -Path .\XmlFormatter.CommandLine\bin\Release\*\* -DestinationPath $zipFile
+          "ZIP_FILENAME=$zipFile" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: $zipFile
+          path: ${{ steps.archive.outputs.ZIP_FILENAME }}
