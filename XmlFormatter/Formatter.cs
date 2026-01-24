@@ -174,52 +174,40 @@ public partial class Formatter
                 return;
 
             case XmlNodeType.Comment:
+                var shouldIndent = true;
+                if (currentOptions.PreserveCommentPlacement)
+                {
+                    shouldIndent = node is
+                    {
+                        PreviousSibling: not null,
+                        PreviousSibling.Value: not null,
+                        PreviousSibling.NodeType: XmlNodeType.Whitespace
+                    } && node.PreviousSibling.Value.Contains('\n');
+
+                }
+                if (shouldIndent && node.ParentNode?.NodeType is XmlNodeType.Document)
+                {
+                    shouldIndent = false;
+                }
+                if (shouldIndent && currentOptions.PreserveCommentPlacement)
+                {
+                    sb.AppendLine();
+                }
+                var indent = shouldIndent ? new string(Constants.Space, currentStartLength) : string.Empty;
+                var commentText = string.Empty;
                 if (currentOptions.PreserveWhiteSpacesInComment)
                 {
-                    if (node.ParentNode?.NodeType == XmlNodeType.Document)
-                    {
-                        sb.Append(node.OuterXml);
-                    }
-                    else
-                    {
-                        sb.Append(new string(Constants.Space, currentStartLength) + node.OuterXml);
-                    }
-
+                    commentText = node.OuterXml;
                 }
                 else if (currentOptions.WrapCommentTextWithSpaces)
                 {
-                    if (node.ParentNode?.NodeType == XmlNodeType.Document)
-                    {
-                        sb.Append(Constants.CommentTagStart
-                                    + Constants.Space
-                                    + node.Value?.Trim()
-                                    + Constants.Space
-                                    + Constants.CommentTagEnd);
-                    }
-                    else
-                    {
-                        sb.Append(new string(Constants.Space, currentStartLength)
-                                  + Constants.CommentTagStart
-                                  + Constants.Space
-                                  + node.Value?.Trim()
-                                  + Constants.Space
-                                  + Constants.CommentTagEnd);
-                    }
+                    commentText = $"<!-- {node.Value?.Trim()} -->";
                 }
                 else
                 {
-                    if (node.ParentNode?.NodeType == XmlNodeType.Document)
-                    {
-                        sb.Append($@"<!--{node.Value?.Trim()}-->");
-                    }
-                    else
-                    {
-                        sb.Append(new string(Constants.Space, currentStartLength)
-                                  + Constants.CommentTagStart
-                                  + node.Value?.Trim()
-                                  + Constants.CommentTagEnd);
-                    }
+                    commentText = $"<!--{node.Value?.Trim()}-->";
                 }
+                sb.Append(indent).Append(commentText);
 
                 return;
 
@@ -442,12 +430,15 @@ public partial class Formatter
                 {
                     continue;
                 }
-                if (currentChild.NodeType is not XmlNodeType.Text
-                                         and not XmlNodeType.CDATA
-                                         and not XmlNodeType.EntityReference
-                                         and not XmlNodeType.SignificantWhitespace
-                                         and not XmlNodeType.Whitespace
-                    && lastNodeType is not XmlNodeType.Text)
+                var commentNoNewLine = currentChild.NodeType is XmlNodeType.Comment
+                                       && currentOptions.PreserveCommentPlacement
+                                       && currentChild.PreviousSibling?.NodeType is XmlNodeType.Element or XmlNodeType.Whitespace;
+                if (currentChild.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA
+                                         or XmlNodeType.EntityReference
+                                         or XmlNodeType.SignificantWhitespace
+                                         or XmlNodeType.Whitespace)
+                    && lastNodeType is not XmlNodeType.Text
+                    && commentNoNewLine is false)
                 {
                     sb.Append(Environment.NewLine);
                 }
@@ -455,7 +446,7 @@ public partial class Formatter
 
                 if (currentOptions.AddEmptyLineBetweenElements
                     && currentChild.NodeType is XmlNodeType.Element
-                    && currentChild.NextSibling?.NodeType is not XmlNodeType.Text and not XmlNodeType.SignificantWhitespace
+                    && currentChild.NextSibling?.NodeType is not (XmlNodeType.Text or XmlNodeType.SignificantWhitespace)
                     && node.ChildNodes.Count > 2
                     && j < node.ChildNodes.Count - 1)
                 {

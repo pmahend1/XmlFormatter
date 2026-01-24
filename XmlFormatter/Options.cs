@@ -20,4 +20,5 @@ public record struct Options
     public List<string> WildCardedExceptionsForPositionAllAttributesOnFirstLine { get; init; } = [];
     public bool AddEmptyLineBetweenElements { get; set; } = false;
     public bool PreserveNewLines { get; set; } = false;
+    public bool PreserveCommentPlacement { get; set; } = false;
 }

@@ -28,6 +28,7 @@ internal class Program
             "Sample2.xml",
             "Sample3.xml",
             "Sample4.xml",
+            "Sample5.xml",
             "ResxSample.xml"
         };
 
@@ -45,7 +46,9 @@ internal class Program
 
             var settings = new Options()
             {
-                PreserveNewLines = true
+                PreserveNewLines = true,
+                PreserveCommentPlacement = true,
+                WrapCommentTextWithSpaces = true,
             };
 
             var formattedText = formatter.Format(xmlString, formattingOptions: settings);

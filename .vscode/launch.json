@@ -3,11 +3,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch",
+            "name": "C# Debug",
             "type": "dotnet",
             "request": "launch",
             "projectPath": "${workspaceFolder}/Sample/Sample.csproj"
-
         }
     ]
 }
