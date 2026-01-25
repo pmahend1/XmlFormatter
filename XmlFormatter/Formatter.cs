@@ -164,13 +164,11 @@ public partial class Formatter
 
             case XmlNodeType.CDATA:
                 var newLine = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : Environment.NewLine;
-                var spaces = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : new string(Constants.Space, currentStartLength);
+                var spaces = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : new string(' ', currentStartLength);
                 Debug.WriteLine($"CDATA value: {node.Value}");
-                sb.Append(newLine
-                          + spaces
-                          + Constants.CDataStart
-                          + node.Value
-                          + Constants.CDataEnd);
+                sb.Append(newLine)
+                  .Append(spaces)
+                  .Append($"<![CDATA[{node.Value}]]>");
                 return;
 
             case XmlNodeType.Comment:
@@ -183,7 +181,6 @@ public partial class Formatter
                         PreviousSibling.Value: not null,
                         PreviousSibling.NodeType: XmlNodeType.Whitespace
                     } && node.PreviousSibling.Value.Contains('\n');
-
                 }
                 if (shouldIndent && node.ParentNode?.NodeType is XmlNodeType.Document)
                 {
@@ -193,7 +190,7 @@ public partial class Formatter
                 {
                     sb.AppendLine();
                 }
-                var indent = shouldIndent ? new string(Constants.Space, currentStartLength) : string.Empty;
+                var indent = shouldIndent ? new string(' ', currentStartLength) : string.Empty;
                 var commentText = string.Empty;
                 if (currentOptions.PreserveWhiteSpacesInComment)
                 {
@@ -310,9 +307,9 @@ public partial class Formatter
         }
 
         //print start tag
-        var space = prevNode != XmlNodeType.Text ? new string(Constants.Space, currentStartLength) : string.Empty;
+        var space = prevNode is not XmlNodeType.Text ? new string(' ', currentStartLength) : string.Empty;
 
-        sb.Append(space + Constants.StartTagStart + node.Name);
+        sb.Append(space).Append($"<{node.Name}");
 
         var wildCardExceptionForAllAttributesOnFirstLineExist = currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine.Any(pattern => Regex.IsMatch(node.Name, pattern));
         var shouldAttributesSeparatedBySpace = currentOptions.PositionAllAttributesOnFirstLine
@@ -322,7 +319,7 @@ public partial class Formatter
         {
             if (shouldAttributesSeparatedBySpace)
             {
-                sb.Append(Constants.Space);
+                sb.Append(' ');
                 if (wildCardExceptionForAllAttributesOnFirstLineExist)
                 {
                     currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
@@ -332,21 +329,17 @@ public partial class Formatter
             {
                 if (currentOptions.PositionFirstAttributeOnSameLine)
                 {
+                    sb.Append(' ');
                     if (node.Attributes.Count > currentOptions.AttributesInNewlineThreshold)
                     {
-                        sb.Append(Constants.Space);
                         currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
-                    }
-                    else
-                    {
-                        sb.Append(Constants.Space);
                     }
                 }
                 else
                 {
-                    sb.Append(Environment.NewLine);
+                    sb.AppendLine();
                     currentAttributeSpace = currentStartLength + currentOptions.IndentLength;
-                    sb.Append(new string(Constants.Space, currentAttributeSpace));
+                    sb.Append(new string(' ', currentAttributeSpace));
                 }
             }
 
@@ -378,22 +371,18 @@ public partial class Formatter
                     }
                 }
 
-                if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains(Constants.Apos))
+                if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains("&apos;"))
                 {
-                    attributeValue = attributeValue.Replace(Constants.Apos, "'");
+                    attributeValue = attributeValue.Replace("&apos;", "'");
                 }
-                sb.Append(attribute.Name
-                          + (currentOptions.UseSingleQuotes ? Constants.AssignmentStartSingleQuote : Constants.AssignmentStart)
-                          + attributeValue
-                          + (currentOptions.UseSingleQuotes ? Constants.AssignmentEndSingleQuote : Constants.AssignmentEnd)
-                          + newLineOrSpace);
+                sb.Append($"{attribute.Name}{(currentOptions.UseSingleQuotes ? "='" : "=\"")}{attributeValue}{(currentOptions.UseSingleQuotes ? '\'' : "\"")}{newLineOrSpace}");
 
                 //continue
                 if (isLast is false)
                 {
                     if (shouldAttributesSeparatedBySpace is false && isThresholdApplicable is false)
                     {
-                        sb.Append(new string(Constants.Space, currentAttributeSpace));
+                        sb.Append(new string(' ', currentAttributeSpace));
                     }
                 }
                 //start tag end if last tag
@@ -455,54 +444,39 @@ public partial class Formatter
             }
 
             //close tag after all child nodes
-            if (node.NodeType is not XmlNodeType.Comment
-                             and not XmlNodeType.CDATA
-                             and not XmlNodeType.DocumentType
-                             and not XmlNodeType.Text)
+            if (node.NodeType is not (XmlNodeType.Comment or XmlNodeType.CDATA or XmlNodeType.DocumentType or XmlNodeType.Text))
             {
                 if (currentStartLength >= currentOptions.IndentLength
-                    && lastNodeType is not XmlNodeType.Text
-                                   and not XmlNodeType.CDATA
-                                   and not XmlNodeType.DocumentType
-                                   and not XmlNodeType.EntityReference)
+                    && lastNodeType is not (XmlNodeType.Text or XmlNodeType.CDATA or XmlNodeType.DocumentType or XmlNodeType.EntityReference))
                 {
                     currentStartLength -= currentOptions.IndentLength;
                 }
-                var newLine = lastNodeType is not XmlNodeType.Text
-                                          and not XmlNodeType.CDATA
-                                          and not XmlNodeType.EntityReference ? Environment.NewLine : string.Empty;
-                var spaces = lastNodeType is not XmlNodeType.Text
-                                         and not XmlNodeType.EntityReference
-                                         and not XmlNodeType.CDATA ? new string(Constants.Space, currentStartLength) : string.Empty;
-                sb.Append(newLine
-                          + spaces
-                          + Constants.EndTagStart
-                          + node.Name
-                          + Constants.EndTagEnd);
+                var newLine = lastNodeType is not (XmlNodeType.Text or XmlNodeType.CDATA or XmlNodeType.EntityReference) ? Environment.NewLine : string.Empty;
+                var spaces = lastNodeType is not (XmlNodeType.Text or XmlNodeType.EntityReference or XmlNodeType.CDATA) ? new string(' ', currentStartLength) : string.Empty;
+                sb.Append(newLine)
+                  .Append(spaces)
+                  .Append($"</{node.Name}>");
 
                 lastNodeType = node.NodeType;
             }
-
-            Debug.WriteLine(node.Name + " with value " + node.Value);
         }
         //if no children end tag
         #region NoChildEndTag
 
         else if (currentOptions.UseSelfClosingTags)
         {
-
             if (currentOptions.AddSpaceBeforeSelfClosingTag)
             {
-                sb.Append(Constants.Space + Constants.InlineEndTag);
+                sb.Append(" />");
             }
             else
             {
-                sb.Append(Constants.InlineEndTag);
+                sb.Append("/>");
             }
         }
         else
         {
-            sb.AppendFormat($"></{node.Name}>");
+            sb.Append($"></{node.Name}>");
         }
 
         #endregion NoChildEndTag
