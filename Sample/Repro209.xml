@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="/">
+    <root>
+      <xsl:value-of select="Email/FirstName"></xsl:value-of>
+      <xsl:text> </xsl:text>
+      <xsl:value-of select="Email/LastName"></xsl:value-of>
+    </root>
+  </xsl:template>
+</xsl:stylesheet>
