@@ -289,11 +289,27 @@ public partial class Formatter
 
                 if (currentOptions.PreserveNewLines && string.IsNullOrEmpty(node.Value) is false)
                 {
-                    var newlineRegex = new Regex(Environment.NewLine);
-                    var newText = newlineRegex.Replace(input: node.Value, replacement: string.Empty, count: 1);
-                    if (MultiNewLinesRegex().IsMatch(node.Value))
+                    /*
+                     * Only emit whitespace that is actual element content (no element siblings),
+                     * not structural indentation between siblings (which is regenerated). See #209.
+                     */
+                    var hasElementSibling = node.PreviousSibling is { NodeType: XmlNodeType.Element }
+                                            || node.NextSibling is { NodeType: XmlNodeType.Element };
+
+                    if (!hasElementSibling)
                     {
-                        sb.Append(newText);
+                        if (!node.Value.Contains('\n'))
+                        {
+                            // Inline whitespace — signal Text so closing tag stays inline
+                            sb.Append(node.Value);
+                            lastNodeType = XmlNodeType.Text;
+                        }
+                        else
+                        {
+                            // Collapse newline runs, then append
+                            var collapsed = Regex.Replace(node.Value, @"(\r?\n)+", Environment.NewLine);
+                            sb.Append(collapsed);
+                        }
                     }
                 }
                 return;
@@ -407,7 +423,15 @@ public partial class Formatter
         //prints child nodes
         if (node.HasChildNodes)
         {
-            if (node.FirstChild is { NodeType: not (XmlNodeType.Text or XmlNodeType.CDATA) })
+            // Treat inline whitespace content like Text for indentation (see #209)
+            var firstChildIsInlineContent =
+                node.FirstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
+                || (currentOptions.PreserveNewLines
+                    && node.ChildNodes.Count == 1
+                    && node.FirstChild is { NodeType: XmlNodeType.Whitespace, Value: not null } firstWs
+                    && !firstWs.Value.Contains('\n'));
+
+            if (!firstChildIsInlineContent)
             {
                 currentStartLength += currentOptions.IndentLength;
             }

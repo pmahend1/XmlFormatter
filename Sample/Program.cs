@@ -29,7 +29,8 @@ internal class Program
             "Sample3.xml",
             "Sample4.xml",
             "Sample5.xml",
-            "ResxSample.xml"
+            "ResxSample.xml",
+            "Repro209.xml"
         };
 
         foreach (var file in files)
