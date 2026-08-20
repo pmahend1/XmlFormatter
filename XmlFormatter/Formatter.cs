@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -19,6 +18,86 @@ public partial class Formatter
 
     [GeneratedRegex(@"(?:\r?\n\s*){2,}")]
     private static partial Regex MultiNewLinesRegex();
+
+    /// <summary>
+    /// Single-pass XML value escaper. Encodes the five mandatory XML characters
+    /// (&amp; &lt; &gt; &quot; &apos;) plus all control characters and non-ASCII
+    /// codepoints as hex character references (&#xHH;). O(n), no string scans.
+    /// </summary>
+    private static string EscapeXmlValue(string value, bool escapeNonAscii, bool useSingleQuotes)
+    {
+        var sb = new StringBuilder(value.Length);
+        foreach (var c in value)
+        {
+            switch (c)
+            {
+                case '&':
+                    sb.Append("&amp;");
+                    break;
+                case '<':
+                    sb.Append("&lt;");
+                    break;
+                case '>':
+                    sb.Append("&gt;");
+                    break;
+                case '"' when !useSingleQuotes:
+                    sb.Append("&quot;");
+                    break;
+                case '\'' when useSingleQuotes:
+                    sb.Append("&apos;");
+                    break;
+                default:
+                    if (escapeNonAscii && (c < ' ' || c > '~'))
+                    {
+                        sb.Append("&#x");
+                        sb.Append(((int)c).ToString("X"));
+                        sb.Append(';');
+                    }
+                    else
+                    {
+                        sb.Append(c);
+                    }
+                    break;
+            }
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Re-encodes non-ASCII characters in an already-XML-escaped string (e.g. OuterXml)
+    /// as hex character references. Does not touch ASCII or existing entity references.
+    /// </summary>
+    private static string EncodeNonAscii(string xmlEscapedText)
+    {
+        // Fast path: if all chars are ASCII, return as-is with no allocation.
+        var allAscii = true;
+        foreach (var c in xmlEscapedText)
+        {
+            if (c > '~')
+            {
+                allAscii = false;
+                break;
+            }
+        }
+        if (allAscii) return xmlEscapedText;
+
+        var sb = new StringBuilder(xmlEscapedText.Length);
+        foreach (var c in xmlEscapedText)
+        {
+            if (c > '~')
+            {
+                sb.Append("&#x");
+                sb.Append(((int)c).ToString("X"));
+                sb.Append(';');
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
+    }
+
 
     private static XmlDocument ConvertToXMLDocument(string input, bool preserveNewLines = false)
     {
@@ -253,15 +332,15 @@ public partial class Formatter
             case XmlNodeType.Text:
                 if (node.ParentNode?.ParentNode is XmlElement element && element.HasAttribute("xml:space") && element.GetAttribute("xml:space") == "preserve")
                 {
-                    sb.Append(node.OuterXml);
+                    sb.Append(EncodeNonAscii(node.OuterXml));
                 }
                 else if (!node.OuterXml.Contains(Environment.NewLine))
                 {
-                    sb.Append(node.OuterXml);
+                    sb.Append(EncodeNonAscii(node.OuterXml));
                 }
                 else
                 {
-                    var text = node.OuterXml;
+                    var text = EncodeNonAscii(node.OuterXml);
                     var lines = text.Split(Environment.NewLine);
                     for (int i = 0; i < lines.Length; i++)
                     {
@@ -367,25 +446,10 @@ public partial class Formatter
 
                 var newLineOrSpace = isLast ? string.Empty : shouldAttributesSeparatedBySpace || isThresholdApplicable ? " " : Environment.NewLine;
 
-                var attributeValue = SecurityElement.Escape(attribute.Value);
-
-                if (currentOptions.AllowWhiteSpaceUnicodesInAttributeValues)
-                {
-                    if (attributeValue.Contains('\n'))
-                    {
-                        attributeValue = attributeValue.Replace("\n", "&#xA;");
-                    }
-
-                    if (attributeValue.Contains('\t'))
-                    {
-                        attributeValue = attributeValue.Replace("\t", "&#x9;");
-                    }
-
-                    if (attributeValue.Contains("&gt;"))
-                    {
-                        attributeValue = attributeValue.Replace("&gt;", ">");
-                    }
-                }
+                var attributeValue = EscapeXmlValue(
+                    attribute.Value,
+                    escapeNonAscii: currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
+                    useSingleQuotes: currentOptions.UseSingleQuotes);
 
                 if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains("&apos;"))
                 {
