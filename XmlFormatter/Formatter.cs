@@ -27,8 +27,9 @@ public partial class Formatter
     private static string EscapeXmlValue(string value, bool escapeNonAscii, bool useSingleQuotes)
     {
         var sb = new StringBuilder(value.Length);
-        foreach (var c in value)
+        for (var i = 0; i < value.Length; i++)
         {
+            var c = value[i];
             switch (c)
             {
                 case '&':
@@ -49,8 +50,18 @@ public partial class Formatter
                 default:
                     if (escapeNonAscii && (c < ' ' || c > '~'))
                     {
+                        int codePoint;
+                        if (char.IsHighSurrogate(c) && i + 1 < value.Length && char.IsLowSurrogate(value[i + 1]))
+                        {
+                            codePoint = char.ConvertToUtf32(c, value[i + 1]);
+                            i++; // skip the low surrogate
+                        }
+                        else
+                        {
+                            codePoint = c;
+                        }
                         sb.Append("&#x");
-                        sb.Append(((int)c).ToString("X"));
+                        sb.Append(codePoint.ToString("X"));
                         sb.Append(';');
                     }
                     else
@@ -82,12 +93,23 @@ public partial class Formatter
         if (allAscii) return xmlEscapedText;
 
         var sb = new StringBuilder(xmlEscapedText.Length);
-        foreach (var c in xmlEscapedText)
+        for (var i = 0; i < xmlEscapedText.Length; i++)
         {
+            var c = xmlEscapedText[i];
             if (c > '~')
             {
+                int codePoint;
+                if (char.IsHighSurrogate(c) && i + 1 < xmlEscapedText.Length && char.IsLowSurrogate(xmlEscapedText[i + 1]))
+                {
+                    codePoint = char.ConvertToUtf32(c, xmlEscapedText[i + 1]);
+                    i++; // skip the low surrogate
+                }
+                else
+                {
+                    codePoint = c;
+                }
                 sb.Append("&#x");
-                sb.Append(((int)c).ToString("X"));
+                sb.Append(codePoint.ToString("X"));
                 sb.Append(';');
             }
             else
