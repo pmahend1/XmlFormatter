@@ -90,7 +90,10 @@ public partial class Formatter
                 break;
             }
         }
-        if (allAscii) return xmlEscapedText;
+        if (allAscii)
+        {
+            return xmlEscapedText;
+        }
 
         var sb = new StringBuilder(xmlEscapedText.Length);
         for (var i = 0; i < xmlEscapedText.Length; i++)
@@ -119,7 +122,6 @@ public partial class Formatter
         }
         return sb.ToString();
     }
-
 
     private static XmlDocument ConvertToXMLDocument(string input, bool preserveNewLines = false)
     {
@@ -468,10 +470,9 @@ public partial class Formatter
 
                 var newLineOrSpace = isLast ? string.Empty : shouldAttributesSeparatedBySpace || isThresholdApplicable ? " " : Environment.NewLine;
 
-                var attributeValue = EscapeXmlValue(
-                    attribute.Value,
-                    escapeNonAscii: currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
-                    useSingleQuotes: currentOptions.UseSingleQuotes);
+                var attributeValue = EscapeXmlValue(attribute.Value,
+                                                    escapeNonAscii: currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
+                                                    useSingleQuotes: currentOptions.UseSingleQuotes);
 
                 if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains("&apos;"))
                 {
