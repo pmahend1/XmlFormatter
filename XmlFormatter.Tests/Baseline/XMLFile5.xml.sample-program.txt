@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<View>
+    <Content>
+        <Label text="{i18n&gt;LabelText}" />
+        <Input id="Input1"
+               value="{service&gt;description}" />
+    </Content>
+</View>
