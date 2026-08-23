@@ -514,7 +514,7 @@ public partial class Formatter
             var firstChildIsInlineContent =
                 node.FirstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
                 || (currentOptions.PreserveNewLines
-                    && node.ChildNodes.Count == 1
+                    && node.FirstChild == node.LastChild
                     && node.FirstChild is { NodeType: XmlNodeType.Whitespace, Value: not null } firstWs
                     && !firstWs.Value.Contains('\n'));
 
@@ -523,13 +523,10 @@ public partial class Formatter
                 currentStartLength += currentOptions.IndentLength;
             }
 
-            for (var j = 0; j < node.ChildNodes.Count; j++)
+            var childCount = currentOptions.AddEmptyLineBetweenElements ? node.ChildNodes.Count : 0;
+
+            for (var currentChild = node.FirstChild; currentChild is not null; currentChild = currentChild.NextSibling)
             {
-                var currentChild = node.ChildNodes[j];
-                if (currentChild is null)
-                {
-                    continue;
-                }
                 var commentNoNewLine = currentChild.NodeType is XmlNodeType.Comment
                                        && currentOptions.PreserveCommentPlacement
                                        && currentChild.PreviousSibling?.NodeType is XmlNodeType.Element or XmlNodeType.Whitespace;
@@ -547,8 +544,8 @@ public partial class Formatter
                 if (currentOptions.AddEmptyLineBetweenElements
                     && currentChild.NodeType is XmlNodeType.Element
                     && currentChild.NextSibling?.NodeType is not (XmlNodeType.Text or XmlNodeType.SignificantWhitespace)
-                    && node.ChildNodes.Count > 2
-                    && j < node.ChildNodes.Count - 1)
+                    && childCount > 2
+                    && currentChild.NextSibling is not null)
                 {
                     sb.AppendLine();
                 }
