@@ -44,6 +44,33 @@ public class MinimizeTests
     }
 
     [Fact]
+    public void A_legacy_code_page_encoding_should_not_crash()
+    {
+        KnownFailure.Expect("Minimize throws ArgumentException on a document whose declaration names a "
+                          + "code-page encoding. .NET Core dropped those from the default provider, so "
+                          + "Encoding.GetEncoding(\"windows-1252\") needs CodePagesEncodingProvider "
+                          + "registered. Format handles the same document, and the CLI catches only "
+                          + "XmlException - so this escapes Main unhandled. iso-8859-1 and us-ascii are "
+                          + "built in and work; windows-1252 is the common one that does not.",
+                            () =>
+                            {
+                                var minimized = Minimize("""<?xml version="1.0" encoding="windows-1252"?><r><a/></r>""");
+
+                                Assert.Contains("<r><a /></r>", minimized);
+                            });
+    }
+
+    [Fact]
+    public void Built_in_encodings_are_carried_through()
+    {
+        // The boundary of the failure above: these resolve without the code-pages provider.
+        Assert.StartsWith("""<?xml version="1.0" encoding="iso-8859-1"?>""",
+                          Minimize("""<?xml version="1.0" encoding="iso-8859-1"?><r/>"""));
+        Assert.StartsWith("""<?xml version="1.0" encoding="us-ascii"?>""",
+                          Minimize("""<?xml version="1.0" encoding="ascii"?><r/>"""));
+    }
+
+    [Fact]
     public void Comments_are_kept()
     {
         var minimized = Minimize("<r>\n  <!-- note -->\n  <a/>\n</r>");
