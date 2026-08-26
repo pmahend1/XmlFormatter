@@ -34,6 +34,8 @@ internal static class BenchOptions
 
     public static Options Resolve(string name)
     {
-        return All.TryGetValue(name, out var options) ? options : throw new ArgumentException($"Unknown option set '{name}'. Known: {string.Join(", ", All.Keys)}");
+        return All.TryGetValue(name, out var options)
+            ? options
+            : throw new ArgumentException($"Unknown option set '{name}'. Known: {string.Join(", ", All.Keys)}");
     }
 }
