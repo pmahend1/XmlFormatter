@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Coverage configuration for the XPlat Code Coverage collector.
+
+  Exclusions live here rather than as [ExcludeFromCodeCoverage] attributes in the library:
+  what a coverage report counts is a reporting decision, and the shipping assembly should not
+  carry annotations that exist to move a number.
+
+  Wired in by RunSettingsFilePath in XmlFormatter.Tests.csproj, so a plain `dotnet test` picks
+  it up. A runsettings file is inert unless something points at it.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+
+          <!--
+            JsonInputDto is the CLI's stdin contract: a plain DTO with no behaviour, exercised
+            by the CommandLine project, which has no tests. Counting it here measures the wrong
+            project and hides the formatter's real number.
+          -->
+          <Exclude>[XmlFormatter]XmlFormatter.JsonInputDto</Exclude>
+
+          <!-- The [GeneratedRegex] partial. Not ours to test. -->
+          <ExcludeByFile>**/*.g.cs</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

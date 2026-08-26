@@ -15,6 +15,20 @@ public partial class Formatter
 
     private Options currentOptions = new();
 
+    /*
+     * .NET Core dropped the code-page encodings from the default provider, so
+     * Encoding.GetEncoding("windows-1252") throws ArgumentException until this is registered.
+     * Minimize resolves whatever encoding the document declares, and windows-1252 is common in
+     * older XML - without this it crashes on a document Format handles, and the CLI only
+     * catches XmlException so it would escape as an unhandled exception.
+     *
+     * No package needed: CodePagesEncodingProvider ships in the shared framework on net10.0.
+     */
+    static Formatter()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
 
     [GeneratedRegex(@"(?:\r?\n\s*){2,}")]
     private static partial Regex MultiNewLinesRegex();
@@ -439,10 +453,6 @@ public partial class Formatter
             if (shouldAttributesSeparatedBySpace)
             {
                 sb.Append(' ');
-                if (wildCardExceptionForAllAttributesOnFirstLineExist)
-                {
-                    currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
-                }
             }
             else
             {
