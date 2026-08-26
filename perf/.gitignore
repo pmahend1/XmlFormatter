@@ -1,0 +1,6 @@
+# Everything in here is produced by XmlFormatter.Benchmarks and is reproducible from it:
+#   dotnet run -c Release --project XmlFormatter.Benchmarks -- generate
+# Generation is deterministic, so committing ~40 MB of samples would only duplicate the
+# generator that already lives in the repo.
+*
+!.gitignore
