@@ -1,11 +1,16 @@
 namespace XmlFormatter.Tests.OptionBehaviour;
 
 /// <summary>
-/// AddEmptyLineBetweenElements separates sibling elements with a blank line.
+/// AddEmptyLineBetweenElements separates sibling elements with a blank line, and only where
+/// the child count is greater than two.
 ///
-/// The blank line goes *between* siblings, so none is written after the last one. It applies
-/// to element siblings only - text and CDATA are left alone, since a blank line there would
-/// change the document's content rather than its layout.
+/// That threshold is the documented contract, not an accident of the implementation - the
+/// PrettyXML setting reads "Add empty line between elements if the child count is greater
+/// than 2", so a parent with exactly two children is left packed on purpose.
+///
+/// The blank line goes *between* siblings, so none is written before the first or after the
+/// last. It applies to element siblings only - text and CDATA are left alone, since a blank
+/// line there would change the document's content rather than its layout.
 /// </summary>
 public class AddEmptyLineBetweenElementsTests
 {
@@ -34,18 +39,18 @@ public class AddEmptyLineBetweenElementsTests
     }
 
     [Fact]
-    public void True_should_separate_two_siblings_as_well()
+    public void True_leaves_exactly_two_siblings_packed()
     {
-        KnownFailure.Expect("AddEmptyLineBetweenElements does nothing when the parent has exactly two "
-                          + "children. The blank line is guarded by `childCount > 2` in PrintNode, which "
-                          + "looks like an off-by-one: with two children there is one gap to fill, and "
-                          + "the option fills every other gap in the document.",
-                            () =>
-                            {
-                                var formatted = TestFormatter.Format("<r><a/><b/></r>", BlankLines);
+        // The documented threshold. Two children is the boundary case, so it is pinned here
+        // rather than left to be inferred from the three-child test above.
+        var formatted = TestFormatter.Format("<r><a/><b/></r>", BlankLines);
 
-                                Assert.Equal("<r>\n    <a />\n\n    <b />\n</r>", formatted);
-                            });
+        Assert.Equal("""
+            <r>
+                <a />
+                <b />
+            </r>
+            """, formatted);
     }
 
     [Fact]

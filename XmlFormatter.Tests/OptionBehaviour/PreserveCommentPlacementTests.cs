@@ -7,9 +7,11 @@ namespace XmlFormatter.Tests.OptionBehaviour;
 /// It decides by looking at what precedes the comment in the tree: a comment whose previous
 /// sibling is whitespace containing a newline was on its own line and stays there, and
 /// anything else is treated as trailing a sibling on the same line. That test only works when
-/// the whitespace is in the tree at all, which is what PreserveNewLines controls - the two
-/// options are meant to be used together, and the failing test below is what happens when
-/// they are not.
+/// the whitespace is in the tree at all, which is what PreserveNewLines controls.
+///
+/// Several PrettyXML settings do document a dependency on another - "Ignored if Use Single
+/// Quotes is Checked" and the like - but this pairing is not one of them, and the failure
+/// mode is silent rather than an "ignored". See the failing test below.
 /// </summary>
 public class PreserveCommentPlacementTests
 {
@@ -55,8 +57,10 @@ public class PreserveCommentPlacementTests
         KnownFailure.Expect("PreserveCommentPlacement without PreserveNewLines writes an own-line comment "
                           + "hard against the left margin. It decides indentation by looking for a "
                           + "preceding Whitespace sibling, and without PreserveNewLines those nodes were "
-                          + "dropped at load - so every comment looks like a trailing one. The option is "
-                          + "only safe in combination, which nothing in the API signals.",
+                          + "dropped at load - so every comment looks like a trailing one. If the "
+                          + "dependency is intended it belongs in the setting's description the way the "
+                          + "other ignored-if pairs are; either way, losing the indent is not the right "
+                          + "way to express it.",
                             () =>
                             {
                                 var formatted = TestFormatter.Format(OwnLineComment, Preserving);

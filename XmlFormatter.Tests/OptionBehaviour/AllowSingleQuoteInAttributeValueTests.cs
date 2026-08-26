@@ -1,13 +1,16 @@
 namespace XmlFormatter.Tests.OptionBehaviour;
 
 /// <summary>
-/// AllowSingleQuoteInAttributeValue is meant to decide whether an apostrophe inside a value
-/// stays literal or is written as &amp;apos;.
+/// AllowSingleQuoteInAttributeValue decides whether an apostrophe inside a value stays
+/// literal or is written as &amp;apos;.
 ///
-/// It currently cannot do either. With double quotes the escaper never emits &amp;apos; in
-/// the first place, so the replacement that honours this option has nothing to act on; with
-/// single quotes Format forces the option off, because a literal apostrophe would close the
-/// value. The option therefore has no observable effect in any configuration.
+/// Being ignored under UseSingleQuotes is the documented contract - the PrettyXML setting
+/// reads "Ignored if Use Single Quotes is Checked" - and it has to be, since a literal
+/// apostrophe would close a single-quoted value.
+///
+/// What is left over is the case the setting is actually for. Under double quotes the escaper
+/// never emits &amp;apos; in the first place, so the replacement that honours this option has
+/// nothing to act on and turning it off changes nothing.
 /// </summary>
 public class AllowSingleQuoteInAttributeValueTests
 {
@@ -24,9 +27,10 @@ public class AllowSingleQuoteInAttributeValueTests
     [Fact]
     public void False_should_escape_the_apostrophe_under_double_quotes()
     {
-        KnownFailure.Expect("AllowSingleQuoteInAttributeValue = false is ignored. EscapeXmlValue only "
-                          + "escapes the delimiter in use, so under double quotes it never produces the "
-                          + "&apos; that the option's replacement looks for.",
+        KnownFailure.Expect("AllowSingleQuoteInAttributeValue = false is inert under double quotes, which "
+                          + "is the only configuration where it is not documented as ignored. EscapeXmlValue "
+                          + "escapes just the delimiter in use, so it never produces the &apos; that this "
+                          + "option's replacement looks for, and the setting has no reachable effect at all.",
                             () =>
                             {
                                 var options = TestOptions.NoDeclaration with { AllowSingleQuoteInAttributeValue = false };
@@ -38,10 +42,10 @@ public class AllowSingleQuoteInAttributeValueTests
     }
 
     [Fact]
-    public void Is_overridden_when_single_quotes_are_in_use()
+    public void Is_ignored_when_single_quotes_are_in_use()
     {
-        // Asking for single quotes and literal apostrophes at once would produce invalid XML,
-        // so Format resolves the conflict in favour of well-formedness rather than the option.
+        // Documented: "Ignored if Use Single Quotes is Checked". Asking for single quotes and
+        // literal apostrophes at once would produce invalid XML, so well-formedness wins.
         var options = TestOptions.NoDeclaration with
         {
             UseSingleQuotes = true,

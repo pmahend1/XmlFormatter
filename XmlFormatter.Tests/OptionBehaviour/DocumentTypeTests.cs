@@ -1,8 +1,13 @@
 namespace XmlFormatter.Tests.OptionBehaviour;
 
 /// <summary>
-/// DOCTYPE handling is not driven by an option, but it is the one place where the formatter
-/// can turn a valid document into an invalid one, so it is pinned here alongside the options.
+/// DOCTYPE handling is not driven by an option, and DTDs are documented as having limited
+/// support - they carry validation rules of their own that this formatter does not model, in
+/// the way XSLT does not either.
+///
+/// These tests do not argue with that scope. They pin the cases that already work, and record
+/// the one place where limited support goes past "not handled" into rewriting a document the
+/// parser accepted into one it will reject.
 /// </summary>
 public class DocumentTypeTests
 {
@@ -36,8 +41,9 @@ public class DocumentTypeTests
         KnownFailure.Expect("The SYSTEM keyword is dropped. FormatXMLDocument writes the public id with "
                           + "its keyword but the system id bare, which is correct only when a public id "
                           + "is present - PUBLIC takes two literals. With no public id the output is "
-                          + "`<!DOCTYPE root \"my.dtd\">`, which no parser will read back. Sample/XMLFile8.xml "
-                          + "hits this, so three of the fixture baselines are not well-formed XML.",
+                          + "`<!DOCTYPE root \"my.dtd\">`, which no parser will read back. This is a one-line "
+                          + "fix in the emitter and needs none of the DTD support the formatter does not "
+                          + "claim: the keyword is already in hand, it is just not written.",
                             () =>
                             {
                                 var formatted = TestFormatter.Format("""<!DOCTYPE root SYSTEM "my.dtd"><root/>""",
