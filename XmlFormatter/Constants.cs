@@ -1,4 +1,4 @@
-﻿namespace XmlFormatter;
+namespace XmlFormatter;
 
 public struct Constants
 {

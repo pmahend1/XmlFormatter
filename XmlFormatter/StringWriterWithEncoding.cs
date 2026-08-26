@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace XmlFormatter;
 
@@ -13,10 +13,14 @@ public sealed class StringWriterWithEncoding : StringWriter
 
     public StringWriterWithEncoding(Encoding encoding)
     {
-        if (encoding == null)
+        if (encoding is null)
+        {
             _encoding = Encoding.UTF8;
+        }
         else
+        {
             _encoding = encoding;
+        }
     }
 
     public override Encoding Encoding
