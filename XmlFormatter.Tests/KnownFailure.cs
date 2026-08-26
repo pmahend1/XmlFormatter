@@ -1,6 +1,6 @@
 using Xunit.Sdk;
 
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests;
 
 /// <summary>
 /// Wraps an assertion that states what the formatter *should* produce for a case where it

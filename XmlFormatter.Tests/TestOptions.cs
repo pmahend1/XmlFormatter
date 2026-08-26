@@ -1,4 +1,4 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests;
 
 /// <summary>
 /// Starting points for the per-option tests.

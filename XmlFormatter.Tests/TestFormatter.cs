@@ -1,4 +1,4 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests;
 
 /// <summary>
 /// Formats a document for the per-option tests and normalises the result to LF.

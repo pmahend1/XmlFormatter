@@ -439,10 +439,6 @@ public partial class Formatter
             if (shouldAttributesSeparatedBySpace)
             {
                 sb.Append(' ');
-                if (wildCardExceptionForAllAttributesOnFirstLineExist)
-                {
-                    currentAttributeSpace = currentStartLength + node.Name.Length + 2;// 2 is not indent length here.It is = lengthOf(<)+ lengthOf(>)
-                }
             }
             else
             {

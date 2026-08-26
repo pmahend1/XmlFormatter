@@ -15,8 +15,8 @@ namespace XmlFormatter.Tests.OptionBehaviour;
 /// </summary>
 public class AllowWhiteSpaceUnicodesInAttributeValuesTests
 {
-    private const string Accented = "<r a=\"café\"/>";
-    private const string Emoji = "<r a=\"hi 😀\"/>";
+    private const string Accented = "<r a=\"caf\u00E9\"/>";
+    private const string Emoji = "<r a=\"hi \uD83D\uDE00\"/>";
 
     [Fact]
     public void True_by_default_escapes_non_ascii_as_a_hex_reference()
@@ -33,7 +33,7 @@ public class AllowWhiteSpaceUnicodesInAttributeValuesTests
 
         var formatted = TestFormatter.Format(Accented, options);
 
-        Assert.Equal("<r a=\"café\" />", formatted);
+        Assert.Equal("<r a=\"caf\u00E9\" />", formatted);
     }
 
     [Fact]
