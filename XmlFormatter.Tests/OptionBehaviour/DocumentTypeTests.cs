@@ -1,13 +1,13 @@
 namespace XmlFormatter.Tests.OptionBehaviour;
 
 /// <summary>
-/// DOCTYPE handling is not driven by an option, and DTDs are documented as having limited
-/// support - they carry validation rules of their own that this formatter does not model, in
-/// the way XSLT does not either.
+/// DOCTYPE handling is not driven by an option, and "Limited DTD support" is a documented
+/// limitation of PrettyXML dating from its first release - DTDs carry validation rules of
+/// their own that this formatter does not model, in the way XSLT does not either.
 ///
-/// These tests do not argue with that scope. They pin the cases that already work, and record
-/// the one place where limited support goes past "not handled" into rewriting a document the
-/// parser accepted into one it will reject.
+/// These tests are a record, not an argument for changing that. They pin the two cases that
+/// work today, and hold the third as a known failure so the behaviour is written down
+/// somewhere other than a baseline file that cannot say whether it is intended.
 /// </summary>
 public class DocumentTypeTests
 {
@@ -41,9 +41,9 @@ public class DocumentTypeTests
         KnownFailure.Expect("The SYSTEM keyword is dropped. FormatXMLDocument writes the public id with "
                           + "its keyword but the system id bare, which is correct only when a public id "
                           + "is present - PUBLIC takes two literals. With no public id the output is "
-                          + "`<!DOCTYPE root \"my.dtd\">`, which no parser will read back. This is a one-line "
-                          + "fix in the emitter and needs none of the DTD support the formatter does not "
-                          + "claim: the keyword is already in hand, it is just not written.",
+                          + "`<!DOCTYPE root \"my.dtd\">`, which no parser will read back. Filed under the "
+                          + "documented DTD limitation rather than the roadmap, so this exemption is "
+                          + "expected to stand. If it is ever picked up, emit SYSTEM when PublicId is null.",
                             () =>
                             {
                                 var formatted = TestFormatter.Format("""<!DOCTYPE root SYSTEM "my.dtd"><root/>""",
