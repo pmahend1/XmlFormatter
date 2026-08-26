@@ -1,0 +1,12 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Sample/Sample.csproj" />
+  <Project Path="XmlFormatter.Benchmarks/XmlFormatter.Benchmarks.csproj" />
+  <Project Path="XmlFormatter.CommandLine/XmlFormatter.CommandLine.csproj" />
+  <Project Path="XmlFormatter.Tests/XmlFormatter.Tests.csproj" />
+  <Project Path="XmlFormatter/XmlFormatter.csproj" />
+</Solution>
