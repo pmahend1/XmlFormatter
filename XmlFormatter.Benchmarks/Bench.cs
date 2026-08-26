@@ -93,7 +93,7 @@ internal static class Bench
             Console.WriteLine($"\nsaved to {Path.GetRelativePath(PerfPaths.RepoRoot, save)}");
         }
 
-        if (failures.Count is not 0)
+        if (failures.Count is 0)
         {
             return 0;
         }
