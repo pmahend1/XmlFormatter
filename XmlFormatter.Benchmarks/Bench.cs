@@ -16,7 +16,7 @@ namespace XmlFormatter.Benchmarks;
 /// </summary>
 internal static class Bench
 {
-    #region Properties
+    #region State
 
     private const string StartupProbe = """<?xml version="1.0"?><root><a x="1"><b/></a></root>""";
 
@@ -33,7 +33,7 @@ internal static class Bench
 
     private static readonly JsonSerializerOptions CamelCaseJsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    #endregion Properties
+    #endregion State
 
     #region Methods
 
