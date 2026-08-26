@@ -44,30 +44,45 @@ public class MinimizeTests
     }
 
     [Fact]
-    public void A_legacy_code_page_encoding_should_not_crash()
+    public void A_legacy_code_page_encoding_is_handled()
     {
-        KnownFailure.Expect("Minimize throws ArgumentException on a document whose declaration names a "
-                          + "code-page encoding. .NET Core dropped those from the default provider, so "
-                          + "Encoding.GetEncoding(\"windows-1252\") needs CodePagesEncodingProvider "
-                          + "registered. Format handles the same document, and the CLI catches only "
-                          + "XmlException - so this escapes Main unhandled. iso-8859-1 and us-ascii are "
-                          + "built in and work; windows-1252 is the common one that does not.",
-                            () =>
-                            {
-                                var minimized = Minimize("""<?xml version="1.0" encoding="windows-1252"?><r><a/></r>""");
+        /*
+         * Regression test for the static constructor in Formatter. .NET Core dropped the
+         * code-page encodings from the default provider, so before it was registered this
+         * threw ArgumentException on a document Format handles - and the CLI catches only
+         * XmlException, so it escaped as an unhandled exception rather than a message.
+         */
+        var minimized = Minimize("""<?xml version="1.0" encoding="windows-1252"?><r><a/></r>""");
 
-                                Assert.Contains("<r><a /></r>", minimized);
-                            });
+        // The declared name is echoed as written, not normalised to the provider's casing.
+        Assert.Equal("""<?xml version="1.0" encoding="windows-1252"?><r><a /></r>""", minimized);
     }
 
     [Fact]
     public void Built_in_encodings_are_carried_through()
     {
-        // The boundary of the failure above: these resolve without the code-pages provider.
+        // These resolve from the shared framework, with or without the code-pages provider -
+        // which is why the windows-1252 crash was easy to miss.
         Assert.StartsWith("""<?xml version="1.0" encoding="iso-8859-1"?>""",
                           Minimize("""<?xml version="1.0" encoding="iso-8859-1"?><r/>"""));
         Assert.StartsWith("""<?xml version="1.0" encoding="us-ascii"?>""",
                           Minimize("""<?xml version="1.0" encoding="ascii"?><r/>"""));
+    }
+
+    [Fact]
+    public void An_unknown_encoding_name_still_throws_the_wrong_exception_type()
+    {
+        KnownFailure.Expect("Minimize throws ArgumentException, not XmlException, when the declaration "
+                          + "names an encoding that does not exist. XmlDocument parses such a document "
+                          + "happily, so this is Minimize's own failure - and the CLI catches only "
+                          + "XmlException, so it reaches the user as an unhandled crash rather than the "
+                          + "syntax error the extension promises to display.",
+                            () =>
+                            {
+                                var bogus = """<?xml version="1.0" encoding="not-an-encoding"?><r/>""";
+
+                                Assert.Throws<System.Xml.XmlException>(() => Minimize(bogus));
+                            });
     }
 
     [Fact]

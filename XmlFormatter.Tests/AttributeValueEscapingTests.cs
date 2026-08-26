@@ -54,6 +54,26 @@ public class AttributeValueEscapingTests
     }
 
     [Fact]
+    public void An_apostrophe_is_escaped_inside_a_single_quoted_value()
+    {
+        var formatted = TestFormatter.Format("""<r a="it's"/>""",
+                                             TestOptions.NoDeclaration with { UseSingleQuotes = true });
+
+        Assert.Equal("<r a='it&apos;s' />", formatted);
+    }
+
+    [Fact]
+    public void An_apostrophe_is_left_literal_inside_a_double_quoted_value()
+    {
+        // The fifth character, and the only one whose handling is in question:
+        // AllowSingleQuoteInAttributeValue is supposed to control this and cannot.
+        // AllowSingleQuoteInAttributeValueTests carries the known failure.
+        var formatted = TestFormatter.Format("""<r a="it's"/>""", TestOptions.NoDeclaration);
+
+        Assert.Equal("""<r a="it's" />""", formatted);
+    }
+
+    [Fact]
     public void All_three_unconditional_escapes_survive_together()
     {
         var formatted = TestFormatter.Format("""<r a="&lt;&amp;&gt;"/>""", TestOptions.NoDeclaration);
