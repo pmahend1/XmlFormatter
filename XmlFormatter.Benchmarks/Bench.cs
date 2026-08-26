@@ -93,7 +93,7 @@ internal static class Bench
             Console.WriteLine($"\nsaved to {Path.GetRelativePath(PerfPaths.RepoRoot, save)}");
         }
 
-        if (failures.Count <= 0)
+        if (failures.Count is not 0)
         {
             return 0;
         }
@@ -111,7 +111,10 @@ internal static class Bench
             : [.. Directory.GetFiles(sampleDir, "*.xml").OrderBy(path => path, StringComparer.Ordinal)];
     }
 
-    private static Dictionary<string, SampleResult> LoadBaseline(string? path) => path is null ? [] : Load(path).ToDictionary(result => result.Sample, StringComparer.Ordinal);
+    private static Dictionary<string, SampleResult> LoadBaseline(string? path)
+    {
+        return path is null ? [] : Load(path).ToDictionary(result => result.Sample, StringComparer.Ordinal);
+    }
 
     private static void WriteRunHeader(string dll, string sampleDir, string optionSet)
     {
