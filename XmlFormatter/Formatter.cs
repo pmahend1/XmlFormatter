@@ -554,6 +554,8 @@ public class Formatter
         #endregion NoChildEndTag
     }
 
+    [SuppressMessage("Performance", "CA1822:Mark members as static")]
+    [SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
     public string Minimize(string xmlString)
     {
         var xmlDoc = ConvertToXmlDocument(xmlString);
