@@ -1,9 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// AddSpaceBeforeSelfClosingTag controls the space in "&lt;a /&gt;". It only applies when
-/// UseSelfClosingTags is on - with an explicit end tag there is nothing to separate.
-/// </summary>
 public class AddSpaceBeforeSelfClosingTagTests
 {
     private const string Empty = "<r><a/></r>";

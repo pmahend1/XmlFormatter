@@ -1,13 +1,7 @@
 namespace XmlFormatter.Tests;
 
 /// <summary>
-/// The five characters XML requires escaping in an attribute value, as handled by
-/// EscapeXmlValue.
-///
-/// Three of them - &amp; &lt; &gt; - are unconditional. The two delimiters are not: only the
-/// one currently in use is escaped, because the other cannot end the value and reads better
-/// left alone. UseSingleQuotesTests covers the choice of delimiter; this covers the escaping
-/// that follows from it.
+/// Only the delimiter in use is escaped; the other is legal literal and reads better.
 /// </summary>
 public class AttributeValueEscapingTests
 {

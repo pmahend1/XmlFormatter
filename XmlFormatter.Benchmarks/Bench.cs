@@ -1,18 +1,14 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using XmlFormatter.CommandLine;
 
 namespace XmlFormatter.Benchmarks;
 
 /// <summary>
-/// Times the formatter end to end by shelling out to the CLI, once per sample.
-///
-/// A subprocess per run is deliberate: it is what the editor extension actually does, and
-/// it gives every measurement a cold JIT and an empty heap instead of letting an earlier
-/// sample's warm-up flatter a later one. The cost is a fixed .NET host startup on top of
-/// every number, so startup is re-measured with a 1 KB document immediately before each
-/// sample and subtracted - a busy machine then skews both halves together rather than
-/// inflating the reported work.
+/// Times the formatter by shelling out to the CLI, once per sample - what the extension does,
+/// and a cold JIT per measurement. Host startup is re-measured next to each sample and
+/// subtracted, so a busy machine skews both halves together.
 /// </summary>
 internal static class Bench
 {
@@ -74,11 +70,7 @@ internal static class Bench
             }
             catch (FormatterFailedException failure)
             {
-                /*
-                 * One sample the formatter cannot handle should not cost us the timings for
-                 * all the others. Record it, print a placeholder row, and carry on - the
-                 * failures are reported together at the end and set the exit code.
-                 */
+                // Carry on: one bad sample should not cost the timings for all the others.
                 ResultTable.WriteFailedRow(name, document.Length);
                 failures.Add($"{name}: {failure.Message}");
             }
@@ -106,15 +98,12 @@ internal static class Bench
 
     private static List<string> SamplesIn(string sampleDir)
     {
-        return Directory.Exists(sampleDir) is false
-            ? []
-            : [.. Directory.GetFiles(sampleDir, "*.xml").OrderBy(path => path, StringComparer.Ordinal)];
+        return Directory.Exists(sampleDir) is false ?
+               [] :
+               [.. Directory.GetFiles(sampleDir, "*.xml").OrderBy(path => path, StringComparer.Ordinal)];
     }
 
-    private static Dictionary<string, SampleResult> LoadBaseline(string? path)
-    {
-        return path is null ? [] : Load(path).ToDictionary(result => result.Sample, StringComparer.Ordinal);
-    }
+    private static Dictionary<string, SampleResult> LoadBaseline(string? path) => path is null ? [] : Load(path).ToDictionary(result => result.Sample, StringComparer.Ordinal);
 
     private static void WriteRunHeader(string dll, string sampleDir, string optionSet)
     {
@@ -148,18 +137,10 @@ internal static class Bench
                                 WorkMs: Round(work));
     }
 
-    /// <summary>
-    /// Work should grow no faster than size. Anything meaningfully steeper is the shape of
-    /// bug this harness exists to catch, so it gets called out rather than left to be read
-    /// off the table.
-    /// </summary>
+    // Work should grow no faster than size; steeper is the bug this harness exists to catch.
     private static void ReportScaling(IReadOnlyList<SampleResult> results)
     {
-        /*
-         * Only a size ladder has a scaling story. The shape corpus is five unrelated
-         * documents in alphabetical order, and comparing neighbours there produces ratios
-         * that look alarming and mean nothing.
-         */
+        // Only a size ladder has a scaling story - the shape corpus is unrelated documents.
         var isAscendingLadder = results.Zip(results.Skip(1))
                                        .All(pair => pair.Second.InputBytes > pair.First.InputBytes);
 
@@ -190,7 +171,7 @@ internal static class Bench
     {
         var input = new JsonInputDto
         {
-            XMLString = document,
+            Xml = document,
             ActionKind = FormattingActionKind.Format,
             FormattingOptions = options,
         };
@@ -210,13 +191,15 @@ internal static class Bench
         using var process = Process.Start(info) ?? throw new InvalidOperationException("Could not start dotnet");
 
         /*
-         * All three pipes have to be serviced concurrently. Writing stdin from this thread
-         * deadlocks once a document outgrows the pipe buffer; draining stdout before stderr
-         * deadlocks too, and less obviously - a crashing runtime dumps a stack trace far
-         * larger than the stderr buffer, so the child blocks on a write nobody is reading
-         * while this side waits for a stdout EOF that will never come.
+         * All three pipes must be serviced concurrently or this deadlocks: stdin once a document
+         * outgrows the pipe buffer, and stdout-before-stderr because a crashing runtime dumps a
+         * stack trace larger than the stderr buffer, so the child blocks on a write nobody reads.
+         *
+         * The writer takes the stream, not the process, so no lambda captures the `using` variable.
          */
-        var writer = Task.Run(() => WritePayload(process, payload));
+        var stdin = process.StandardInput.BaseStream;
+
+        var writer = Task.Run(() => WritePayload(stdin, payload));
         var outReader = Task.Run(process.StandardOutput.ReadToEnd);
         var errReader = Task.Run(process.StandardError.ReadToEnd);
 
@@ -230,13 +213,14 @@ internal static class Bench
             : new Measurement(elapsed, outReader.Result.Length);
     }
 
-    private static void WritePayload(Process process, byte[] payload)
+    // Closing stdin is what signals EOF. Takes ownership of the stream.
+    private static void WritePayload(Stream stdin, byte[] payload)
     {
-        using var stdin = process.StandardInput.BaseStream;
+        using var stream = stdin;
 
         try
         {
-            stdin.Write(payload);
+            stream.Write(payload);
         }
         catch (IOException)
         {
@@ -245,10 +229,7 @@ internal static class Bench
     }
 
     /// <summary>Fixed .NET host startup, measured next to the sample it is subtracted from.</summary>
-    private static double MeasureStartup(string dll, Options options, int runs = 4)
-    {
-        return Median(Enumerable.Range(0, runs).Select(_ => TimeOnce(dll, StartupProbe, options).ElapsedMs));
-    }
+    private static double MeasureStartup(string dll, Options options, int runs = 4) => Median(Enumerable.Range(0, runs).Select(_ => TimeOnce(dll, StartupProbe, options).ElapsedMs));
 
     private static double Median(IEnumerable<double> values)
     {
@@ -264,8 +245,11 @@ internal static class Bench
         File.WriteAllText(path, JsonSerializer.Serialize(results, BaselineJson));
     }
 
-    private static IReadOnlyList<SampleResult> Load(string path) => JsonSerializer.Deserialize<List<SampleResult>>(File.ReadAllText(path), BaselineJson)
-                                                                 ?? throw new InvalidOperationException($"Could not read baseline {path}");
+    private static List<SampleResult> Load(string path)
+    {
+        return JsonSerializer.Deserialize<List<SampleResult>>(File.ReadAllText(path), BaselineJson)
+               ?? throw new InvalidOperationException($"Could not read baseline {path}");
+    }
 
     private static double Round(double value) => Math.Round(value, 1);
 

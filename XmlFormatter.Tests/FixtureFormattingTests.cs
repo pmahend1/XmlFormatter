@@ -1,17 +1,10 @@
-using System.Text;
-using XmlFormatter;
-
 namespace XmlFormatter.Tests;
 
 /// <summary>
-/// Characterization tests: every fixture in Sample/ is formatted under each option set and
-/// compared against a committed baseline file. These do not assert that the output is
-/// *correct* - they assert it has not *changed*. That is what makes a refactor of
-/// PrintNode (which has no other test coverage) safe to review.
+/// Characterization: asserts output has not *changed*, not that it is correct.
 ///
-/// To re-baseline after an intentional formatting change, delete the affected files in
-/// Baseline/ and run the suite once - missing baselines are written, not failed - then read
-/// the resulting diff carefully before committing it.
+/// To re-baseline, delete the affected files in Baseline/ and run once - missing baselines
+/// are written rather than failed - then read the diff before committing.
 /// </summary>
 public class FixtureFormattingTests
 {
@@ -41,7 +34,7 @@ public class FixtureFormattingTests
         {
             Directory.CreateDirectory(TestPaths.BaselineDir);
             File.WriteAllText(baselinePath, actual);
-            return;                 // first run records the baseline
+            return; // first run records the baseline
         }
 
         Assert.Equal(File.ReadAllText(baselinePath), actual);

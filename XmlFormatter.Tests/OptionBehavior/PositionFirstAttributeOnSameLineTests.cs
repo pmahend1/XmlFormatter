@@ -1,13 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// PositionFirstAttributeOnSameLine decides where a wrapped attribute list starts: after the
-/// element name, or on the line below it.
-///
-/// The two produce different continuation indents. Keeping the first attribute on the name's
-/// line aligns the rest under it, so the indent depends on the element name's length; moving
-/// it down uses one IndentLength from the element instead.
-/// </summary>
 public class PositionFirstAttributeOnSameLineTests
 {
     private const string TwoAttributes = """<r a="1" b="2"/>""";

@@ -9,7 +9,7 @@ internal readonly record struct Verdict(ScalingCase Scenario,
     /// <summary>Work growth as a multiple of size growth. 1.0 is exactly linear.</summary>
     public double Steepness => WorkFactor / SizeFactor;
 
-    public bool IsLinear => Steepness <= Tolerance;
+    private bool IsLinear => Steepness <= Tolerance;
 
     public bool IsRegression => IsLinear is false && Scenario.KnownFailing is null;
 

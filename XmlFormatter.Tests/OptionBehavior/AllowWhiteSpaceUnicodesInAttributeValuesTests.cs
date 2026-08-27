@@ -1,4 +1,4 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
 /// AllowWhiteSpaceUnicodesInAttributeValues decides whether tab, newline and carriage return

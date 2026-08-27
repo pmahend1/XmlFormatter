@@ -1,13 +1,10 @@
-using System;
-using System.IO;
-
 namespace XmlFormatter.Sample;
 
-internal class Program
+internal static class Program
 {
-    public static void Main(string[] args)
+    private static void Main(string[] _)
     {
-        var files = new string[]
+        var files = new[]
         {
             "XMLFile1.xml",
             "XMLFile2.xml",
@@ -45,7 +42,7 @@ internal class Program
             WriteToConsole($"{xmlString}{Environment.NewLine}");
             var formatter = new Formatter();
 
-            var settings = new Options()
+            var settings = new Options
             {
                 PreserveNewLines = true,
                 PreserveCommentPlacement = true,
@@ -53,7 +50,7 @@ internal class Program
             };
 
             var formattedText = formatter.Format(xmlString, formattingOptions: settings);
-            File.WriteAllText("Formatted_" + file, formattedText.ToString());
+            File.WriteAllText("Formatted_" + file, formattedText);
 
             WriteToConsole($"Formatted: {Environment.NewLine}----------", textColor: ConsoleColor.Green);
 
@@ -61,9 +58,9 @@ internal class Program
         }
     }
 
-    static void WriteToConsole(string text,
-                               ConsoleColor textColor = ConsoleColor.Gray,
-                               ConsoleColor backgroundColor = ConsoleColor.Black)
+    private static void WriteToConsole(string text,
+                                       ConsoleColor textColor = ConsoleColor.Gray,
+                                       ConsoleColor backgroundColor = ConsoleColor.Black)
     {
 
         Console.ForegroundColor = textColor;

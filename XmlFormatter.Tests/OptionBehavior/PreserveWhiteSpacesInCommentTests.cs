@@ -1,10 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// PreserveWhiteSpacesInComment writes the comment exactly as it was read, instead of
-/// trimming its text. It is checked before WrapCommentTextWithSpaces, so it wins when both
-/// are set.
-/// </summary>
 public class PreserveWhiteSpacesInCommentTests
 {
     private const string Padded = "<r><!--   note   --></r>";

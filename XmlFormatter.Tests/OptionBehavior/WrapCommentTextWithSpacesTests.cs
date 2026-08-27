@@ -1,10 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// WrapCommentTextWithSpaces pads comment text with a space on each side. Either way the
-/// text is trimmed first, so the option decides the padding rather than preserving it -
-/// PreserveWhiteSpacesInComment is the option that keeps the original spacing.
-/// </summary>
 public class WrapCommentTextWithSpacesTests
 {
     private const string Comment = "<r><!--note--></r>";

@@ -1,16 +1,8 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
-/// AddEmptyLineBetweenElements separates sibling elements with a blank line, and only where
-/// the child count is greater than two.
-///
-/// That threshold is the documented contract, not an accident of the implementation - the
-/// PrettyXML setting reads "Add empty line between elements if the child count is greater
-/// than 2", so a parent with exactly two children is left packed on purpose.
-///
-/// The blank line goes *between* siblings, so none is written before the first or after the
-/// last. It applies to element siblings only - text and CDATA are left alone, since a blank
-/// line there would change the document's content rather than its layout.
+/// The "greater than two children" threshold is the documented contract, not an off-by-one:
+/// "Add empty line between elements if the child count is greater than 2".
 /// </summary>
 public class AddEmptyLineBetweenElementsTests
 {

@@ -3,11 +3,9 @@ using System.Text;
 namespace XmlFormatter.Benchmarks;
 
 /// <summary>
-/// Builds the perf corpus. Every document is derived from its index - there is no RNG, so
-/// two runs on two machines produce byte-identical files and timings stay comparable.
-///
-/// Deliberately separate from XmlFormatter.Tests.SyntheticXml: that one is pinned by a
-/// recorded hash and must never change, this one is free to grow new shapes.
+/// Builds the perf corpus. Index-derived, no RNG, so two machines produce identical files.
+/// Kept separate from XmlFormatter.Tests.SyntheticXml, which is pinned by hash and must not
+/// change; this one is free to grow new shapes.
 /// </summary>
 internal static class SampleGenerator
 {
@@ -24,18 +22,11 @@ internal static class SampleGenerator
         ("05-xlarge.xml", 25_000),
     ];
 
-    /// <summary>
-    /// Fixed-size documents that each lean on one code path, so a regression can be
-    /// attributed rather than just observed. Sized to land near the medium rung.
-    /// </summary>
+    // One code path each, so a regression can be attributed rather than just observed.
     private static readonly (string Name, Func<string> Build)[] Shapes =
     [
-        /*
-         * 100 levels, not 800: PrintNode recurses once per level and blows the stack a
-         * little past 797 on macOS - and a .NET exe on Windows gets an eighth of that
-         * stack, so anything deep enough to be interesting here is not portable.
-         * Depth is exercised by repeating a safe chain, not by one very deep one.
-         */
+        // 100 levels, not 800: PrintNode blows the stack past ~797 on macOS, less on Windows.
+        // Depth is exercised by repeating a safe chain.
         ("deep.xml", () => Deep(depth: 100, chains: 200, leavesPerLevel: 2)),
         ("attributes.xml", () => AttributeHeavy(elements: 4_000, attributesEach: 20)),
         ("comments.xml", () => CommentHeavy(records: 4_000)),
@@ -58,11 +49,7 @@ internal static class SampleGenerator
             WriteSample(Path.Combine(PerfPaths.SampleDir, name), minified);
             ReportSample(name, minified.Length, $"{records} records");
 
-            /*
-             * The same document after one formatting pass. Re-formatting an already
-             * formatted file is what an editor actually does, and with PreserveNewLines
-             * on it carries whitespace nodes the minified version never had.
-             */
+            // Re-formatting an already-formatted file is what an editor actually does.
             WriteSample(Path.Combine(PerfPaths.FormattedDir, name), formatter.Format(minified));
         }
 
@@ -76,7 +63,7 @@ internal static class SampleGenerator
             ReportSample(name, document.Length);
         }
 
-        Console.WriteLine("\nAll of the above is generated and gitignored - regenerate with `generate`.");
+        Console.WriteLine("\nAll of the above is generated and git ignored - regenerate with `generate`.");
     }
 
     /// <summary>An order list: attributes, nested elements, a comment and CDATA per record.</summary>
@@ -102,13 +89,8 @@ internal static class SampleGenerator
         return xml.Append("</orders>").ToString();
     }
 
-    /// <summary>
-    /// <paramref name="chains"/> sibling chains, each <paramref name="depth"/> elements deep.
-    ///
-    /// Measures what recursion costs per level. It deliberately does not measure how deep
-    /// the formatter can go before the stack runs out - see the note on the shape list.
-    /// </summary>
-    public static string Deep(int depth, int chains, int leavesPerLevel)
+    // Cost of recursion per level - not how deep the formatter can go before the stack runs out.
+    private static string Deep(int depth, int chains, int leavesPerLevel)
     {
         var xml = new StringBuilder(XmlDeclaration);
         xml.Append("<tree>");
@@ -134,11 +116,8 @@ internal static class SampleGenerator
         return xml.Append("</tree>").ToString();
     }
 
-    /// <summary>
-    /// Many attributes per element - the path through the attribute wrapping rules,
-    /// AttributesInNewlineThreshold and the wildcard exception matching.
-    /// </summary>
-    public static string AttributeHeavy(int elements, int attributesEach)
+    // The attribute wrapping rules, threshold and wildcard matching.
+    private static string AttributeHeavy(int elements, int attributesEach)
     {
         var xml = new StringBuilder(XmlDeclaration);
         xml.Append("<config>");
@@ -161,7 +140,7 @@ internal static class SampleGenerator
     private static string Attribute(string name, object value) => $" {name}=\"{value}\"";
 
     /// <summary>Comment-heavy - the comment regexes and PreserveCommentPlacement.</summary>
-    public static string CommentHeavy(int records)
+    private static string CommentHeavy(int records)
     {
         var xml = new StringBuilder(XmlDeclaration);
         xml.Append("<document>");
@@ -180,18 +159,12 @@ internal static class SampleGenerator
         return xml.Append("</document>").ToString();
     }
 
-    /// <summary>
-    /// Non-ASCII content: CJK, combining marks, RTL and astral-plane emoji. The emoji are
-    /// surrogate pairs, which is the case the custom escaping in the formatter exists for.
-    /// </summary>
-    public static string Unicode(int records)
+    // CJK, combining marks, RTL and astral-plane emoji - surrogate pairs are what the custom
+    // escaping exists for.
+    private static string Unicode(int records)
     {
-        /*
-         * The combining marks and the emoji are escapes on purpose. Typed as literals,
-         * an editor or a careless rewrite normalises them to their precomposed forms and
-         * the combining-mark case quietly stops being tested - the document still looks
-         * identical and is simply 4 bytes per accent shorter. This already happened once.
-         */
+        // Escapes, not literals: normalizing to precomposed forms silently stops testing
+        // combining marks. This already happened once.
         string[] scripts =
         [
             "中文文本内容",
@@ -218,11 +191,8 @@ internal static class SampleGenerator
         return xml.Append("</catalogue>").ToString();
     }
 
-    /// <summary>
-    /// Few nodes, enormous text and CDATA payloads - separates "cost per node" from
-    /// "cost per byte", which the other shapes conflate.
-    /// </summary>
-    public static string TextHeavy(int blocks, int charsEach)
+    // Separates cost-per-node from cost-per-byte, which the other shapes conflate.
+    private static string TextHeavy(int blocks, int charsEach)
     {
         var xml = new StringBuilder(XmlDeclaration);
         xml.Append("<corpus>");

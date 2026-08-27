@@ -1,9 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// PositionAllAttributesOnFirstLine keeps every attribute on the element's line regardless of
-/// how many there are. It overrides AttributesInNewlineThreshold rather than working with it.
-/// </summary>
 public class PositionAllAttributesOnFirstLineTests
 {
     private const string ThreeAttributes = """<r a="1" b="2" c="3"/>""";

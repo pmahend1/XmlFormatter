@@ -2,32 +2,22 @@ using System.Runtime.CompilerServices;
 
 namespace XmlFormatter.Benchmarks;
 
-/// <summary>
-/// Locates the repo and the generated sample directories from the source path, so the
-/// harness works the same whether it is launched by `dotnet run` or from a built output.
-/// </summary>
+// Resolved from the source path, so it works under `dotnet run` and from a built output.
 internal static class PerfPaths
 {
-    public static string ProjectDir { get; } = GetProjectDir();
+    private static string ProjectDir { get; } = GetProjectDir();
 
     public static string RepoRoot { get; } = Path.GetFullPath(Path.Combine(ProjectDir, ".."));
 
-    /// <summary>The size ladder - the set the scaling report is meant to read.</summary>
+    // The size ladder - the only set the scaling report is meaningful on.
     public static string SampleDir { get; } = Path.Combine(RepoRoot, "perf", "samples");
 
-    /// <summary>Ladder documents that have already been through the formatter once.</summary>
     public static string FormattedDir { get; } = Path.Combine(SampleDir, "formatted");
 
-    /// <summary>Fixed-size documents that each lean on one code path.</summary>
     public static string ShapeDir { get; } = Path.Combine(SampleDir, "shapes");
 
-    public static string DefaultBaseline { get; } = Path.Combine(RepoRoot, "perf", "baseline.json");
-
-    /// <summary>
-    /// The CLI the bench shells out to. Release is preferred - a Debug build measures the
-    /// wrong thing, so an accidental Debug run says so out loud rather than reporting numbers
-    /// nobody can compare against.
-    /// </summary>
+    // Release first: a Debug build measures the wrong thing, so it warns rather than
+    // reporting numbers nobody can compare against.
     public static string FindCommandLineDll()
     {
         foreach (var config in new[] { "Release", "Debug" })
