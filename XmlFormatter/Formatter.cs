@@ -20,11 +20,17 @@ public partial class Formatter
     private static partial Regex MultiNewLinesRegex();
 
     /// <summary>
-    /// Single-pass XML value escaper. Encodes the five mandatory XML characters
-    /// (&amp; &lt; &gt; &quot; &apos;) plus all control characters and non-ASCII
-    /// codepoints as hex character references (&#xHH;). O(n), no string scans.
+    /// Single-pass XML attribute value escaper. Encodes &amp; &lt; &gt; and whichever quote
+    /// delimits the value; with <paramref name="escapeWhitespace"/>, also encodes tab, newline
+    /// and carriage return as hex character references. Everything else is written as itself.
+    /// O(n), no string scans.
     /// </summary>
-    private static string EscapeXmlValue(string value, bool escapeNonAscii, bool useSingleQuotes)
+    /// <param name="escapeWhitespace">
+    /// XML attribute-value normalisation (XML 1.0 section 3.3.3) replaces a literal tab, newline
+    /// or carriage return in an attribute value with a space when the document is read back, so
+    /// those three survive a round-trip only as character references.
+    /// </param>
+    private static string EscapeXmlValue(string value, bool escapeWhitespace, bool useSingleQuotes)
     {
         var sb = new StringBuilder(value.Length);
         for (var i = 0; i < value.Length; i++)
@@ -48,20 +54,10 @@ public partial class Formatter
                     sb.Append("&apos;");
                     break;
                 default:
-                    if (escapeNonAscii && (c < ' ' || c > '~'))
+                    if (escapeWhitespace && c is '\t' or '\n' or '\r')
                     {
-                        int codePoint;
-                        if (char.IsHighSurrogate(c) && i + 1 < value.Length && char.IsLowSurrogate(value[i + 1]))
-                        {
-                            codePoint = char.ConvertToUtf32(c, value[i + 1]);
-                            i++; // skip the low surrogate
-                        }
-                        else
-                        {
-                            codePoint = c;
-                        }
                         sb.Append("&#x");
-                        sb.Append(codePoint.ToString("X"));
+                        sb.Append(((int)c).ToString("X"));
                         sb.Append(';');
                     }
                     else
@@ -69,55 +65,6 @@ public partial class Formatter
                         sb.Append(c);
                     }
                     break;
-            }
-        }
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Re-encodes non-ASCII characters in an already-XML-escaped string (e.g. OuterXml)
-    /// as hex character references. Does not touch ASCII or existing entity references.
-    /// </summary>
-    private static string EncodeNonAscii(string xmlEscapedText)
-    {
-        // Fast path: if all chars are ASCII, return as-is with no allocation.
-        var allAscii = true;
-        foreach (var c in xmlEscapedText)
-        {
-            if (c > '~')
-            {
-                allAscii = false;
-                break;
-            }
-        }
-        if (allAscii)
-        {
-            return xmlEscapedText;
-        }
-
-        var sb = new StringBuilder(xmlEscapedText.Length);
-        for (var i = 0; i < xmlEscapedText.Length; i++)
-        {
-            var c = xmlEscapedText[i];
-            if (c > '~')
-            {
-                int codePoint;
-                if (char.IsHighSurrogate(c) && i + 1 < xmlEscapedText.Length && char.IsLowSurrogate(xmlEscapedText[i + 1]))
-                {
-                    codePoint = char.ConvertToUtf32(c, xmlEscapedText[i + 1]);
-                    i++; // skip the low surrogate
-                }
-                else
-                {
-                    codePoint = c;
-                }
-                sb.Append("&#x");
-                sb.Append(codePoint.ToString("X"));
-                sb.Append(';');
-            }
-            else
-            {
-                sb.Append(c);
             }
         }
         return sb.ToString();
@@ -356,15 +303,15 @@ public partial class Formatter
             case XmlNodeType.Text:
                 if (node.ParentNode?.ParentNode is XmlElement element && element.HasAttribute("xml:space") && element.GetAttribute("xml:space") == "preserve")
                 {
-                    sb.Append(EncodeNonAscii(node.OuterXml));
+                    sb.Append(node.OuterXml);
                 }
                 else if (!node.OuterXml.Contains(Environment.NewLine))
                 {
-                    sb.Append(EncodeNonAscii(node.OuterXml));
+                    sb.Append(node.OuterXml);
                 }
                 else
                 {
-                    var text = EncodeNonAscii(node.OuterXml);
+                    var text = node.OuterXml;
                     var lines = text.Split(Environment.NewLine);
                     for (int i = 0; i < lines.Length; i++)
                     {
@@ -471,7 +418,7 @@ public partial class Formatter
                 var newLineOrSpace = isLast ? string.Empty : shouldAttributesSeparatedBySpace || isThresholdApplicable ? " " : Environment.NewLine;
 
                 var attributeValue = EscapeXmlValue(attribute.Value,
-                                                    escapeNonAscii: currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
+                                                    escapeWhitespace: currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
                                                     useSingleQuotes: currentOptions.UseSingleQuotes);
 
                 if (currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains("&apos;"))
