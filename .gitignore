@@ -355,3 +355,5 @@ MigrationBackup/
 
 # Jetbrains
 .idea/
+
+coverage-report/
