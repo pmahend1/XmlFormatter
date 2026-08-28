@@ -1,17 +1,21 @@
 namespace XmlFormatter.Tests.OptionBehaviour;
 
 /// <summary>
-/// AllowWhiteSpaceUnicodesInAttributeValues decides whether non-ASCII characters in an
-/// attribute value are written as hex character references or left as themselves.
+/// AllowWhiteSpaceUnicodesInAttributeValues decides whether tab, newline and carriage return
+/// inside an attribute value are written as hex character references or left as themselves.
 ///
-/// Read the name carefully: true means *escape*, false means leave literal - the opposite of
-/// what "allow ... in attribute values" suggests. The name is load-bearing in the public API
-/// and is not worth breaking, so these tests pin the behaviour the name does not convey.
+/// It exists because of XML attribute-value normalisation (XML 1.0 section 3.3.3): a parser
+/// replaces each literal tab, newline or CR in an attribute value with a space when reading
+/// the document back. Written literally they are silently lost, so escaping them is what makes
+/// the round-trip lossless - which is why the option defaults to true.
 ///
-/// The non-ASCII characters here are written as \u escapes rather than typed. A literal in
-/// the file survives until something normalises it, and a normalised character still looks
-/// identical while testing something else - which has already happened once in this repo, in
-/// the benchmark sample generator.
+/// Printable non-ASCII has no such problem and is never escaped by this option. It once was,
+/// which is what broke umlauts in #216; TextContentEncodingTests carries the rest of that
+/// regression cover.
+///
+/// The whitespace inputs here are written as character references so the source XML says
+/// exactly which codepoint it means, and the non-ASCII ones as \u escapes so normalising the
+/// file cannot silently change what is under test.
 /// </summary>
 public class AllowWhiteSpaceUnicodesInAttributeValuesTests
 {
@@ -19,39 +23,72 @@ public class AllowWhiteSpaceUnicodesInAttributeValuesTests
     private const string Emoji = "<r a=\"hi \uD83D\uDE00\"/>";
 
     [Fact]
-    public void True_by_default_escapes_non_ascii_as_a_hex_reference()
+    public void True_by_default_escapes_a_newline()
     {
-        var formatted = TestFormatter.Format(Accented, TestOptions.NoDeclaration);
+        var formatted = TestFormatter.Format("""<r a="line1&#xA;line2"/>""", TestOptions.NoDeclaration);
 
-        Assert.Equal("<r a=\"caf&#xE9;\" />", formatted);
+        Assert.Equal("""<r a="line1&#xA;line2" />""", formatted);
     }
 
     [Fact]
-    public void False_leaves_non_ascii_literal()
+    public void True_by_default_escapes_a_tab()
+    {
+        var formatted = TestFormatter.Format("""<r a="col1&#x9;col2"/>""", TestOptions.NoDeclaration);
+
+        Assert.Equal("""<r a="col1&#x9;col2" />""", formatted);
+    }
+
+    [Fact]
+    public void True_by_default_escapes_a_carriage_return()
+    {
+        var formatted = TestFormatter.Format("""<r a="line1&#xD;line2"/>""", TestOptions.NoDeclaration);
+
+        Assert.Equal("""<r a="line1&#xD;line2" />""", formatted);
+    }
+
+    [Fact]
+    public void False_leaves_whitespace_literal()
+    {
+        // Well-formed, but a parser reading this back sees a space where the tab was.
+        var options = TestOptions.NoDeclaration with { AllowWhiteSpaceUnicodesInAttributeValues = false };
+
+        var formatted = TestFormatter.Format("""<r a="col1&#x9;col2"/>""", options);
+
+        Assert.Equal("<r a=\"col1\tcol2\" />", formatted);
+    }
+
+    [Fact]
+    public void Non_ascii_is_left_literal_either_way()
     {
         var options = TestOptions.NoDeclaration with { AllowWhiteSpaceUnicodesInAttributeValues = false };
 
-        var formatted = TestFormatter.Format(Accented, options);
+        var escaped = TestFormatter.Format(Accented, TestOptions.NoDeclaration);
+        var literal = TestFormatter.Format(Accented, options);
 
-        Assert.Equal("<r a=\"caf\u00E9\" />", formatted);
+        Assert.Equal("<r a=\"caf\u00E9\" />", escaped);
+        Assert.Equal(escaped, literal);
     }
 
     [Fact]
-    public void True_escapes_a_surrogate_pair_as_one_codepoint()
+    public void A_surrogate_pair_is_left_literal_either_way()
     {
-        // The pair has to be recombined before escaping. Escaping each half on its own would
-        // emit two references for the lone surrogates, which no parser will read back.
-        var formatted = TestFormatter.Format(Emoji, TestOptions.NoDeclaration);
+        // Nothing splits the pair, so nothing has to put it back together.
+        var options = TestOptions.NoDeclaration with { AllowWhiteSpaceUnicodesInAttributeValues = false };
 
-        Assert.Equal("<r a=\"hi &#x1F600;\" />", formatted);
+        var escaped = TestFormatter.Format(Emoji, TestOptions.NoDeclaration);
+        var literal = TestFormatter.Format(Emoji, options);
+
+        Assert.Equal("<r a=\"hi \uD83D\uDE00\" />", escaped);
+        Assert.Equal(escaped, literal);
     }
 
     [Fact]
     public void Ascii_is_untouched_either_way()
     {
+        var options = TestOptions.NoDeclaration with { AllowWhiteSpaceUnicodesInAttributeValues = false };
+
         var escaped = TestFormatter.Format("""<r a="plain"/>""", TestOptions.NoDeclaration);
-        var literal = TestFormatter.Format("""<r a="plain"/>""",
-                                           TestOptions.NoDeclaration with { AllowWhiteSpaceUnicodesInAttributeValues = false });
+        var literal = TestFormatter.Format("""<r a="plain"/>""", options);
 
         Assert.Equal("""<r a="plain" />""", escaped);
         Assert.Equal(escaped, literal);

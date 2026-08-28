@@ -51,6 +51,6 @@ public class FixtureFormattingTests
     public void Every_fixture_is_covered()
     {
         // Guards against a fixture being added to Sample/ without picking up coverage.
-        Assert.Equal(22, TestPaths.Fixtures().Count);
+        Assert.Equal(23, TestPaths.Fixtures().Count);
     }
 }
