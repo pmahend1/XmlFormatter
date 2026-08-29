@@ -111,7 +111,8 @@ jobs:
 
       - name: Build coverage comment
         id: comment
-        run: python3 .github/scripts/coverage_comment.py
+        shell: pwsh
+        run: ./.github/scripts/CoverageComment.ps1
 
       - name: Post coverage comment
         if: github.event_name == 'pull_request' && hashFiles('coverage-comment.md') != ''
