@@ -1,0 +1,60 @@
+name: Tests
+
+# Separate from Bundle Binaries: that workflow releases, this one gates. It has to run on
+# pull_request, which the release workflow does not, or a regression is only visible after
+# it has already landed on main - which is how #216 shipped.
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Not windows-latest, unlike the release job. The formatter emits Environment.NewLine, and
+    # the Baseline/ files were recorded with LF, so FixtureFormattingTests compares CRLF output
+    # against LF baselines on Windows and fails. See the note in the PR before changing this.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        # Coverage format and exclusions come from XmlFormatter.Tests/coverage.runsettings,
+        # which the test project wires in through RunSettingsFilePath.
+        run: dotnet test --configuration Release --no-build --collect:"XPlat Code Coverage"
+
+      - name: Install ReportGenerator
+        if: always()
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
+
+      - name: Build coverage report
+        if: always()
+        run: |
+          reportgenerator \
+            -reports:"XmlFormatter.Tests/TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverage" \
+            -reporttypes:"MarkdownSummaryGithub;Html"
+
+      - name: Publish coverage to job summary
+        if: always()
+        run: cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload HTML coverage report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-report
+          path: coverage

@@ -357,3 +357,5 @@ MigrationBackup/
 .idea/
 
 coverage-report/
+# ReportGenerator output (CI artifact, not source)
+coverage/
