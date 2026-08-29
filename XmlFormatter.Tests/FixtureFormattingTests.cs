@@ -5,9 +5,16 @@ namespace XmlFormatter.Tests;
 ///
 /// To re-baseline, delete the affected files in Baseline/ and run once - missing baselines
 /// are written rather than failed - then read the diff before committing.
+///
+/// Both sides are compared with LF endings. The formatter emits Environment.NewLine, so
+/// without this the committed baselines would only match on the platform that recorded them.
+/// Line endings are covered deliberately by <see cref="LineEndingTests"/> instead of
+/// incidentally here, where a CRLF diff would surface as 23 unreadable fixture failures.
 /// </summary>
 public class FixtureFormattingTests
 {
+    private static string WithLfEndings(string text) => text.Replace("\r\n", "\n");
+
     public static TheoryData<string, string> Cases()
     {
         var data = new TheoryData<string, string>();
@@ -27,7 +34,7 @@ public class FixtureFormattingTests
     {
         var input = File.ReadAllText(Path.Combine(TestPaths.FixtureDir, fixture));
 
-        var actual = new Formatter().Format(input, OptionSets.ByName(optionSet));
+        var actual = WithLfEndings(new Formatter().Format(input, OptionSets.ByName(optionSet)));
 
         var baselinePath = Path.Combine(TestPaths.BaselineDir, $"{fixture}.{optionSet}.txt");
         if (!File.Exists(baselinePath))
@@ -37,7 +44,7 @@ public class FixtureFormattingTests
             return; // first run records the baseline
         }
 
-        Assert.Equal(File.ReadAllText(baselinePath), actual);
+        Assert.Equal(WithLfEndings(File.ReadAllText(baselinePath)), actual);
     }
 
     [Fact]

@@ -1,0 +1,12 @@
+# LF in the working tree on every platform, including Windows.
+#
+# This is not cosmetic. Test expectations are multi-line raw string literals, so their line
+# endings are whatever the .cs file holds on disk - and the CI Windows runner sets
+# core.autocrlf=true, which checked those literals out as CRLF while TestFormatter normalized
+# the actual output to LF. 38 tests failed on a difference that exists nowhere in the code.
+#
+# The fixture suite has the same exposure from the other direction: it compares formatter
+# output against committed baselines and Sample/ inputs.
+#
+# Nothing here is renormalized - every file is already stored as LF.
+* text=auto eol=lf
