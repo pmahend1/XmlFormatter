@@ -18,7 +18,11 @@ public record struct Options()
 
     /// <summary>
     /// Element-name patterns exempt from <see cref="PositionAllAttributesOnFirstLine"/>.
-    /// Read-only: as a List it was shared between copies of the struct.
+    ///
+    /// Read-only so that holding an Options is not a licence to edit the patterns: copying the
+    /// struct copies the reference, so a mutation through any copy would be seen by all of them.
+    /// This closes the property, not the list - a caller that keeps its own reference to what it
+    /// passed in can still change it, and nothing here can prevent that.
     /// </summary>
     public IReadOnlyList<string> WildCardedExceptionsForPositionAllAttributesOnFirstLine { get; init; } = [];
 
