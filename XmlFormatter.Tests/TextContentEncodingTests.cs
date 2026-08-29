@@ -2,13 +2,13 @@ namespace XmlFormatter.Tests;
 
 /// <summary>
 /// Text content is written straight from OuterXml, which the DOM has already escaped
-/// correctly. Nothing re-encodes it afterwards.
+/// correctly. Nothing re-encodes it afterward.
 ///
 /// Regression cover for #216: a pass that rewrote every non-ASCII codepoint in text as a hex
 /// character reference turned every umlaut in an XSLT stylesheet into &amp;#xFC;. The output
 /// parsed back to the same document, so it was well-formed - and unreadable.
 ///
-/// The non-ASCII characters here are written as \u escapes rather than typed, so normalising
+/// The non-ASCII characters here are written as \u escapes rather than typed, so normalizing
 /// the file cannot silently change what is under test.
 /// </summary>
 public class TextContentEncodingTests

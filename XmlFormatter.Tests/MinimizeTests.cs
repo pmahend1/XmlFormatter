@@ -2,7 +2,7 @@ namespace XmlFormatter.Tests;
 
 /// <summary>
 /// Minimize is a separate implementation from Format, not a mode of it: XmlWriter does the
-/// writing and it takes no Options. Where the two disagree is pinned below.
+/// writing, and it takes no Options. Where the two disagree is pinned below.
 /// </summary>
 public class MinimizeTests
 {

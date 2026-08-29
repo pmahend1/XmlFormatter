@@ -42,10 +42,10 @@ public class PreserveNewLinesTests
     [Fact]
     public void True_produces_the_same_output_as_false_for_a_minified_document()
     {
-        const string Minified = "<r><a/><b/></r>";
+        const string minified = "<r><a/><b/></r>";
 
-        Assert.Equal(TestFormatter.Format(Minified, TestOptions.NoDeclaration),
-                     TestFormatter.Format(Minified, Preserving));
+        Assert.Equal(TestFormatter.Format(minified, TestOptions.NoDeclaration),
+                     TestFormatter.Format(minified, Preserving));
     }
 
     [Fact]

@@ -46,17 +46,18 @@ public class Formatter
     /// and carriage return as hex character references. Everything else is written as itself.
     /// O(n), no string scans.
     /// </summary>
+    /// <param name="value">input</param>
     /// <param name="escapeWhitespace">
-    /// XML attribute-value normalisation (XML 1.0 section 3.3.3) replaces a literal tab, newline
+    /// XML attribute-value normalization (XML 1.0 section 3.3.3) replaces a literal tab, newline
     /// or carriage return in an attribute value with a space when the document is read back, so
     /// those three survive a round-trip only as character references.
     /// </param>
+    /// <param name="useSingleQuotes">flag to use single quotes</param>
     private static string EscapeXmlValue(string value, bool escapeWhitespace, bool useSingleQuotes)
     {
         var sb = new StringBuilder(value.Length);
-        for (var i = 0; i < value.Length; i++)
+        foreach (var c in value)
         {
-            var c = value[i];
             switch (c)
             {
                 case '&':
@@ -145,7 +146,7 @@ public class Formatter
         }
         else if (_currentOptions.AddXmlDeclarationIfMissing)
         {
-            sb.AppendLine(Constants.XmlDeclaration);
+            sb.AppendLine("""<?xml version="1.0" encoding="UTF-8" ?>""");
         }
 
         for (var i = 0; i < xml.ChildNodes.Count; i++)
