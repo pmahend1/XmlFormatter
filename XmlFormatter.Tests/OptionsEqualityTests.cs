@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace XmlFormatter.Tests;
@@ -122,7 +123,7 @@ public class OptionsEqualityTests
         {
             bool flag => !flag,
             int number => number + 1,
-            IEnumerable => new List<string> { "a-pattern-no-default-has" },
+            IEnumerable => ImmutableList.Create("a-pattern-no-default-has"),
             _ => throw new NotSupportedException($"{property.PropertyType.Name} has no rule here. Add one "
                                                + "so this guard keeps covering every option."),
         };

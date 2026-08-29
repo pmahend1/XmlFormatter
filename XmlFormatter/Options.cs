@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace XmlFormatter;
 
 public record struct Options()
@@ -16,15 +18,8 @@ public record struct Options()
     public bool AddXmlDeclarationIfMissing { get; init; } = true;
     public int AttributesInNewlineThreshold { get; init; } = 1;
 
-    /// <summary>
-    /// Element-name patterns exempt from <see cref="PositionAllAttributesOnFirstLine"/>.
-    ///
-    /// Read-only so that holding an Options is not a licence to edit the patterns: copying the
-    /// struct copies the reference, so a mutation through any copy would be seen by all of them.
-    /// This closes the property, not the list - a caller that keeps its own reference to what it
-    /// passed in can still change it, and nothing here can prevent that.
-    /// </summary>
-    public IReadOnlyList<string> WildCardedExceptionsForPositionAllAttributesOnFirstLine { get; init; } = [];
+    /// <summary>Element-name patterns exempt from <see cref="PositionAllAttributesOnFirstLine"/>.</summary>
+    public ImmutableList<string> WildCardedExceptionsForPositionAllAttributesOnFirstLine { get; init; } = [];
 
     public bool AddEmptyLineBetweenElements { get; init; } = false;
     public bool PreserveNewLines { get; init; } = false;
@@ -83,7 +78,7 @@ public record struct Options()
     }
 
     /// <summary>Ordinal, order-sensitive: these are patterns, and order decides which matches first.</summary>
-    private static bool PatternsEqual(IReadOnlyList<string>? left, IReadOnlyList<string>? right)
+    private static bool PatternsEqual(ImmutableList<string>? left, ImmutableList<string>? right)
     {
         // default(Options) leaves the property null, so neither side can be assumed present.
         left ??= [];
