@@ -127,14 +127,14 @@ public class MinimizeTests
     }
 
     [Fact]
-    public void Non_ascii_text_is_left_literal_where_Format_would_escape_it()
+    public void Non_ascii_text_is_left_literal_as_it_is_in_Format()
     {
-        // A real difference between the two paths, not an accident of these inputs: Format
-        // runs text through EncodeNonAscii and emits &#xE9;, XmlWriter does not.
+        // The two paths agreed again once Format stopped re-encoding text (#216). They reach it
+        // independently - XmlWriter here, OuterXml there - so it is worth pinning on both.
         var minimized = Minimize("<r>caf\u00E9</r>");
 
         Assert.Equal($"{Utf8Declaration}<r>caf\u00E9</r>", minimized);
-        Assert.Equal("<r>caf&#xE9;</r>", TestFormatter.Format("<r>caf\u00E9</r>", TestOptions.NoDeclaration));
+        Assert.Equal("<r>caf\u00E9</r>", TestFormatter.Format("<r>caf\u00E9</r>", TestOptions.NoDeclaration));
     }
 
     [Fact]
