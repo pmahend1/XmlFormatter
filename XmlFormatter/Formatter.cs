@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -90,7 +91,7 @@ public class Formatter
         return sb.ToString();
     }
 
-    private static XmlDocument ConvertToXMLDocument(string input, bool preserveNewLines = false)
+    private static XmlDocument ConvertToXmlDocument(string input, bool preserveNewLines = false)
     {
         XmlDocument xml = new()
         {
