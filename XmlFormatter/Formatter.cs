@@ -313,14 +313,17 @@ public class Formatter
             case XmlNodeType.Text:
                 if ((node.ParentNode?.ParentNode is XmlElement element &&
                     element.HasAttribute("xml:space") &&
-                    element.GetAttribute("xml:space") is "preserve") || node.OuterXml.Contains(Environment.NewLine) is false)
+                    element.GetAttribute("xml:space") is "preserve") || node.OuterXml.Contains('\n') is false)
                 {
                     sb.Append(node.OuterXml);
                 }
                 else
                 {
+                    // LF, not Environment.NewLine: parsing normalizes every line ending in text
+                    // to LF (XML 1.0 2.11), so the DOM never holds CRLF. Searching for the
+                    // platform newline skipped this branch on Windows and emitted raw text.
                     var text = node.OuterXml;
-                    var lines = text.Split(Environment.NewLine);
+                    var lines = text.Split('\n');
                     for (var i = 0; i < lines.Length; i++)
                     {
                         var line = lines[i];

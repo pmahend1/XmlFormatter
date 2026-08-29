@@ -65,4 +65,19 @@ public class LineEndingTests
 
         Assert.Equal(fromLf, fromCrlf);
     }
+
+    [Fact]
+    public void Multi_line_text_content_is_reflowed_on_every_platform()
+    {
+        // The reflow branch used to test the text for Environment.NewLine. Parsing normalizes
+        // text line endings to LF, so on Windows it never matched: the text was emitted raw,
+        // with its authored tabs, at whatever column it was written. Nothing on Linux could
+        // catch it - there the platform newline is LF and the check was right by accident.
+        var formatted = new Formatter().Format("<r><d>\n\t\tline one\n\t\tline two\n\t</d></r>",
+                                               TestOptions.NoDeclaration);
+
+        Assert.DoesNotContain('\t', formatted);
+        Assert.Contains($"{Environment.NewLine}        line one{Environment.NewLine}        line two",
+                        formatted);
+    }
 }
