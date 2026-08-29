@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
 
-namespace XmlFormatter;
+namespace XmlFormatter.CommandLine;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum FormattingActionKind
+internal enum FormattingActionKind
 {
     Unsupported,
     Format,

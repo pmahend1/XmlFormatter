@@ -1,17 +1,8 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
-/// PreserveNewLines loads the document with XmlDocument.PreserveWhitespace, so whitespace
-/// between nodes survives into the tree instead of being discarded at parse time.
-///
-/// What it does *not* do is reproduce that whitespace. Indentation between element siblings
-/// is still regenerated - see the #209 note in PrintNode - so the option's visible effect is
-/// narrow: whitespace that is an element's only content is kept, and everything structural is
-/// rebuilt. The name promises more than the behaviour delivers.
-///
-/// The option also carries a cost the tests here cannot see: it roughly doubles the sibling
-/// count, and on already-formatted input the formatter is still superlinear in that count.
-/// That is a scaling property, measured by XmlFormatter.Benchmarks, not an output one.
+/// Loads with PreserveWhitespace, but structural indentation is still regenerated (#209), so
+/// the visible effect is narrow: only whitespace that is an element's sole content survives.
 /// </summary>
 public class PreserveNewLinesTests
 {
@@ -51,10 +42,10 @@ public class PreserveNewLinesTests
     [Fact]
     public void True_produces_the_same_output_as_false_for_a_minified_document()
     {
-        const string Minified = "<r><a/><b/></r>";
+        const string minified = "<r><a/><b/></r>";
 
-        Assert.Equal(TestFormatter.Format(Minified, TestOptions.NoDeclaration),
-                     TestFormatter.Format(Minified, Preserving));
+        Assert.Equal(TestFormatter.Format(minified, TestOptions.NoDeclaration),
+                     TestFormatter.Format(minified, Preserving));
     }
 
     [Fact]

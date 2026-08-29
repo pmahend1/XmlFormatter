@@ -5,4 +5,28 @@
         <Nullable>enable</Nullable>
         <Version>2.3.1</Version>
     </PropertyGroup>
+
+    <!--
+        Package metadata. Without these NuGet lists the package with no description and no
+        licence, which is a problem for consumers rather than a cosmetic one - a package with
+        no declared licence grants no rights.
+    -->
+    <PropertyGroup>
+        <PackageId>XmlFormatter</PackageId>
+        <Title>XmlFormatter</Title>
+        <Authors>Prateek Mahendrakar</Authors>
+        <!-- One line: the element's whitespace is preserved verbatim in the nuspec. -->
+        <Description>XML formatter and minifier built on the .NET XML parser, with configurable indentation, attribute placement, quoting, comment and whitespace handling. The engine behind the PrettyXML VS Code extension.</Description>
+        <PackageTags>xml;formatter;format;minify;pretty-print;beautify</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageProjectUrl>https://github.com/pmahend1/XmlFormatter</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/pmahend1/XmlFormatter</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Packed, not linked: the file lives at the repo root, outside this project. -->
+        <None Include="../README.md" Pack="true" PackagePath="/" Visible="false" />
+    </ItemGroup>
 </Project>

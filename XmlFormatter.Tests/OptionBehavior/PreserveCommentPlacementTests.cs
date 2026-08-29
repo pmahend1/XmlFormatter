@@ -1,17 +1,8 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
-/// PreserveCommentPlacement keeps a comment on the line it was written on, rather than
-/// moving every comment onto a line of its own.
-///
-/// It decides by looking at what precedes the comment in the tree: a comment whose previous
-/// sibling is whitespace containing a newline was on its own line and stays there, and
-/// anything else is treated as trailing a sibling on the same line. That test only works when
-/// the whitespace is in the tree at all, which is what PreserveNewLines controls.
-///
-/// Several PrettyXML settings do document a dependency on another - "Ignored if Use Single
-/// Quotes is Checked" and the like - but this pairing is not one of them, and the failure
-/// mode is silent rather than an "ignored". See the failing test below.
+/// Decides placement from the whitespace sibling before the comment, so it needs
+/// PreserveNewLines to have kept one. That dependency is undocumented and fails silently.
 /// </summary>
 public class PreserveCommentPlacementTests
 {

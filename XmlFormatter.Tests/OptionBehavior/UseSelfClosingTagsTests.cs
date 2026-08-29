@@ -1,9 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// UseSelfClosingTags decides how an element with no children is closed: as a self-closing
-/// tag, or as an empty start/end pair.
-/// </summary>
 public class UseSelfClosingTagsTests
 {
     private const string Empty = "<r><a/></r>";

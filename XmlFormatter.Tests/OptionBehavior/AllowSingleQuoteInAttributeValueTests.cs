@@ -1,16 +1,8 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
-/// AllowSingleQuoteInAttributeValue decides whether an apostrophe inside a value stays
-/// literal or is written as &amp;apos;.
-///
-/// Being ignored under UseSingleQuotes is the documented contract - the PrettyXML setting
-/// reads "Ignored if Use Single Quotes is Checked" - and it has to be, since a literal
-/// apostrophe would close a single-quoted value.
-///
-/// What is left over is the case the setting is actually for. Under double quotes the escaper
-/// never emits &amp;apos; in the first place, so the replacement that honours this option has
-/// nothing to act on and turning it off changes nothing.
+/// Ignored under UseSingleQuotes by documented contract. Under double quotes the escaper
+/// never emits &amp;apos;, so the option has no reachable effect at all.
 /// </summary>
 public class AllowSingleQuoteInAttributeValueTests
 {

@@ -1,13 +1,8 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
-/// DOCTYPE handling is not driven by an option, and "Limited DTD support" is a documented
-/// limitation of PrettyXML dating from its first release - DTDs carry validation rules of
-/// their own that this formatter does not model, in the way XSLT does not either.
-///
-/// These tests are a record, not an argument for changing that. They pin the two cases that
-/// work today, and hold the third as a known failure so the behaviour is written down
-/// somewhere other than a baseline file that cannot say whether it is intended.
+/// "Limited DTD support" is a documented limitation, not a bug to fix. These record what
+/// works and hold the SYSTEM case as a known failure.
 /// </summary>
 public class DocumentTypeTests
 {
@@ -59,11 +54,8 @@ public class DocumentTypeTests
     [Fact]
     public void The_output_of_a_system_identifier_does_not_parse()
     {
-        /*
-         * Spells out the consequence of the failure above. This one asserts the *broken*
-         * behaviour on purpose: it is the evidence that the known failure matters, and it will
-         * start failing at the same moment the fix lands, which is the reminder to delete it.
-         */
+        // Asserts the *broken* behavior deliberately: this is why the known failure matters,
+        // and it fails when the fix lands, which is the reminder to delete it.
         var formatted = TestFormatter.Format("""<!DOCTYPE root SYSTEM "my.dtd"><root/>""", TestOptions.NoDeclaration);
 
         Assert.Throws<System.Xml.XmlException>(() => new System.Xml.XmlDocument().LoadXml(formatted));

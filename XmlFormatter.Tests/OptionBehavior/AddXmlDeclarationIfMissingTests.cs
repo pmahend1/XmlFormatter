@@ -1,10 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// AddXmlDeclarationIfMissing prepends a declaration to a document that has none. It never
-/// replaces one that is already there - an existing declaration is carried through whatever
-/// this option says.
-/// </summary>
 public class AddXmlDeclarationIfMissingTests
 {
     [Fact]

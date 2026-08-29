@@ -1,10 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// UseSingleQuotes picks the delimiter for attribute values. Whichever delimiter is in use
-/// is the one escaped inside the value; the other is left literal, which is legal XML and
-/// keeps the output readable.
-/// </summary>
 public class UseSingleQuotesTests
 {
     [Fact]

@@ -3,15 +3,9 @@ namespace XmlFormatter.Tests;
 /// <summary>
 /// Deterministic synthetic documents for code paths the Sample/ fixtures do not reach.
 /// </summary>
-public static class SyntheticXml
+internal static class SyntheticXml
 {
-    /// <summary>
-    /// An order list with <paramref name="records"/> direct children of a single root.
-    ///
-    /// The widest parent in any Sample/ fixture holds 17 children, so nothing there
-    /// exercises the wide-sibling traversal in PrintNode. This does - each record also
-    /// carries attributes, nested elements, a comment and a CDATA section.
-    /// </summary>
+    // Wide-sibling traversal: the widest Sample/ fixture holds only 17 children.
     public static string Orders(int records)
     {
         var sb = new System.Text.StringBuilder();
@@ -19,7 +13,7 @@ public static class SyntheticXml
         sb.Append("""<orders xmlns="http://example.com/orders" generated="true">""");
         for (var i = 0; i < records; i++)
         {
-            // fixed, index-derived values - no randomness, so the hash is stable
+            // Index-derived, never random: WideFanOutTests pins the output by hash.
             var status = (i % 3) switch { 0 => "open", 1 => "shipped", _ => "cancelled" };
             sb.Append($"""<order id="ORD-{i:D6}" status="{status}" priority="{i % 5 + 1}">""")
               .Append($"""<customer name="Customer {i}" email="user{i}@example.com"/>""")

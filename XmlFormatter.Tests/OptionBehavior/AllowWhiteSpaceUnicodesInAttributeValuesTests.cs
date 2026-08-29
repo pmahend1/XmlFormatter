@@ -1,10 +1,10 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
 /// AllowWhiteSpaceUnicodesInAttributeValues decides whether tab, newline and carriage return
 /// inside an attribute value are written as hex character references or left as themselves.
 ///
-/// It exists because of XML attribute-value normalisation (XML 1.0 section 3.3.3): a parser
+/// It exists because of XML attribute-value normalization (XML 1.0 section 3.3.3): a parser
 /// replaces each literal tab, newline or CR in an attribute value with a space when reading
 /// the document back. Written literally they are silently lost, so escaping them is what makes
 /// the round-trip lossless - which is why the option defaults to true.
@@ -14,7 +14,7 @@ namespace XmlFormatter.Tests.OptionBehaviour;
 /// regression cover.
 ///
 /// The whitespace inputs here are written as character references so the source XML says
-/// exactly which codepoint it means, and the non-ASCII ones as \u escapes so normalising the
+/// exactly which codepoint it means, and the non-ASCII ones as \u escapes so normalizing the
 /// file cannot silently change what is under test.
 /// </summary>
 public class AllowWhiteSpaceUnicodesInAttributeValuesTests

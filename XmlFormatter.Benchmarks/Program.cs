@@ -50,9 +50,9 @@ internal static class Program
     {
         var index = Array.IndexOf(args, flag);
 
-        return index >= 0 && index + 1 < args.Length
-            ? args[index + 1]
-            : null;
+        return index >= 0 && index + 1 < args.Length ?
+               args[index + 1] :
+               null;
     }
 
     private static int Unknown(string verb)

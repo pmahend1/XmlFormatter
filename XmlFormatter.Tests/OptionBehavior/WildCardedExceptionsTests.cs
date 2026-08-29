@@ -1,13 +1,8 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
-/// WildCardedExceptionsForPositionAllAttributesOnFirstLine lists regular expressions matched
-/// against element names. A match exempts that element from PositionAllAttributesOnFirstLine,
-/// so its attributes wrap by the usual threshold instead.
-///
-/// Despite "WildCarded" in the name the patterns are regular expressions, matched unanchored
-/// with Regex.IsMatch - a bare "item" matches "lineitem" as well. The list is only consulted
-/// when PositionAllAttributesOnFirstLine is on; on its own it does nothing.
+/// Despite "WildCarded", the patterns are regular expressions matched unanchored, so "item"
+/// also matches "lineitem".
 /// </summary>
 public class WildCardedExceptionsTests
 {

@@ -3,13 +3,8 @@ using System.Xml;
 namespace XmlFormatter.Tests;
 
 /// <summary>
-/// PrettyXML documents that it "formats valid XML files only. Syntax errors are displayed",
-/// and displaying them depends on the formatter throwing rather than returning something
-/// plausible. These pin that contract for both public entry points.
-///
-/// The exception type is part of it: the extension surfaces the message, and XmlException
-/// carries the line and position that make it useful. A wrapped or swallowed error would
-/// still "fail", just uselessly.
+/// The extension displays syntax errors, which needs the formatter to throw XmlException -
+/// that is what carries the line and position.
 /// </summary>
 public class InvalidXmlTests
 {

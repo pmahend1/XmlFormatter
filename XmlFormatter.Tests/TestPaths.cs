@@ -2,16 +2,12 @@ using System.Runtime.CompilerServices;
 
 namespace XmlFormatter.Tests;
 
-/// <summary>
-/// Locates the repo's Sample/ fixtures and this project's Baseline/ directory from the
-/// source path, so the tests read the real fixture files rather than copies staged
-/// into the build output.
-/// </summary>
-public static class TestPaths
+/// <summary>Resolves paths from the source file, so tests read the real fixtures.</summary>
+internal static class TestPaths
 {
-    public static string ProjectDir { get; } = GetProjectDir();
+    private static string ProjectDir { get; } = GetProjectDir();
 
-    public static string RepoRoot { get; } = Path.GetFullPath(Path.Combine(ProjectDir, ".."));
+    private static string RepoRoot { get; } = Path.GetFullPath(Path.Combine(ProjectDir, ".."));
 
     public static string FixtureDir { get; } = Path.Combine(RepoRoot, "Sample");
 

@@ -4,16 +4,16 @@ using System.Xml;
 
 namespace XmlFormatter.CommandLine;
 
-public class ConsoleProgram
+internal class ConsoleProgram
 {
-    public static async Task Main(string[] args)
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
-        string inputString = string.Empty;
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
-        JsonSerializerOptions jsonSerializerOptions = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+    private static async Task Main(string[] _)
+    {
+        string inputString;
 
         using (StreamReader reader = new(Console.OpenStandardInput(), Console.InputEncoding))
         {
@@ -24,39 +24,38 @@ public class ConsoleProgram
         {
             throw new Exception("Unable to read text");
         }
-        else
+
+        try
         {
-            try
+            var jsonInputDto = JsonSerializer.Deserialize<JsonInputDto?>(inputString, options: JsonSerializerOptions);
+            if (jsonInputDto is null || string.IsNullOrWhiteSpace(jsonInputDto.Value.Xml))
             {
-                var jsonInputDto = JsonSerializer.Deserialize<JsonInputDto?>(inputString, options: jsonSerializerOptions);
-                if (jsonInputDto == null || string.IsNullOrWhiteSpace(jsonInputDto.Value.XMLString))
-                {
-                    throw new Exception("Unable to parse file");
-                }
+                throw new Exception("Unable to parse file");
+            }
 
-                var formatter = new Formatter();
+            var formatter = new Formatter();
 
-                switch (jsonInputDto.Value.ActionKind)
-                {
-                    case FormattingActionKind.Format:
-                        Console.Write(formatter.Format(jsonInputDto.Value.XMLString, jsonInputDto.Value.FormattingOptions));
-                        break;
-                    case FormattingActionKind.Minimize:
-                        Console.Write(formatter.Minimize(jsonInputDto.Value.XMLString));
-                        break;
-                    default:
-                        throw new Exception("Unsupported action");
-                }
-            }
-            catch (XmlException xmlException)
+            switch (jsonInputDto.Value.ActionKind)
             {
-                throw new Exception($"{xmlException.Message}");
+                case FormattingActionKind.Format:
+                    Console.Write(formatter.Format(jsonInputDto.Value.Xml, jsonInputDto.Value.FormattingOptions));
+                    break;
+                case FormattingActionKind.Minimize:
+                    Console.Write(formatter.Minimize(jsonInputDto.Value.Xml));
+                    break;
+                case FormattingActionKind.Unsupported:
+                default:
+                    throw new Exception("Unsupported action");
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                throw;
-            }
+        }
+        catch (XmlException xmlException)
+        {
+            throw new Exception($"{xmlException.Message}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+            throw;
         }
     }
 }

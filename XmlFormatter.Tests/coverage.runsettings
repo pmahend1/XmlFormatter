@@ -17,7 +17,7 @@
           <Format>cobertura</Format>
 
           <!--
-            JsonInputDto is the CLI's stdin contract: a plain DTO with no behaviour, exercised
+            JsonInputDto is the CLI's stdin contract: a plain DTO with no behavior, exercised
             by the CommandLine project, which has no tests. Counting it here measures the wrong
             project and hides the formatter's real number.
           -->

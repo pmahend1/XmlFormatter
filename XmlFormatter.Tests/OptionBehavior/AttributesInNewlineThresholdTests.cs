@@ -1,12 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// AttributesInNewlineThreshold is the largest number of attributes still written on one
-/// line. Above it, each attribute goes on its own line.
-///
-/// It only applies while PositionFirstAttributeOnSameLine is on, and is ignored entirely when
-/// PositionAllAttributesOnFirstLine is on.
-/// </summary>
 public class AttributesInNewlineThresholdTests
 {
     private const string ThreeAttributes = """<r a="1" b="2" c="3"/>""";

@@ -1,13 +1,8 @@
 namespace XmlFormatter.Tests;
 
 /// <summary>
-/// Formatter.Minimize - the other half of the public API, and the CLI's second actionKind.
-/// Until these tests it had no coverage at all, along with StringWriterWithEncoding, which
-/// only Minimize constructs.
-///
-/// It is a different implementation from Format, not a mode of it: XmlWriter does the writing,
-/// so its rules apply rather than any Options. Minimize takes no Options at all, and the
-/// places where the two disagree are pinned below rather than left to be discovered.
+/// Minimize is a separate implementation from Format, not a mode of it: XmlWriter does the
+/// writing, and it takes no Options. Where the two disagree is pinned below.
 /// </summary>
 public class MinimizeTests
 {
@@ -26,8 +21,7 @@ public class MinimizeTests
     [Fact]
     public void A_declaration_is_added_even_when_the_input_had_none()
     {
-        // Unlike Format, this is not optional - AddXmlDeclarationIfMissing cannot reach here,
-        // because Minimize takes no Options.
+        // Not optional: AddXmlDeclarationIfMissing cannot reach here.
         var minimized = Minimize("<r><a/></r>");
 
         Assert.Equal($"{Utf8Declaration}<r><a /></r>", minimized);
@@ -36,8 +30,7 @@ public class MinimizeTests
     [Fact]
     public void An_existing_encoding_is_carried_into_the_output()
     {
-        // The only thing StringWriterWithEncoding exists for: XmlWriter takes the encoding to
-        // declare from the writer, so without it every document would come back as utf-8.
+        // What StringWriterWithEncoding exists for: XmlWriter reads the encoding off the writer.
         var minimized = Minimize("""<?xml version="1.0" encoding="utf-16"?><r><a/></r>""");
 
         Assert.StartsWith("""<?xml version="1.0" encoding="utf-16"?>""", minimized);
@@ -46,23 +39,17 @@ public class MinimizeTests
     [Fact]
     public void A_legacy_code_page_encoding_is_handled()
     {
-        /*
-         * Regression test for the static constructor in Formatter. .NET Core dropped the
-         * code-page encodings from the default provider, so before it was registered this
-         * threw ArgumentException on a document Format handles - and the CLI catches only
-         * XmlException, so it escaped as an unhandled exception rather than a message.
-         */
+        // Regression test for the CodePagesEncodingProvider registration in Formatter.
         var minimized = Minimize("""<?xml version="1.0" encoding="windows-1252"?><r><a/></r>""");
 
-        // The declared name is echoed as written, not normalised to the provider's casing.
+        // The declared name is echoed as written, not normalized to the provider's casing.
         Assert.Equal("""<?xml version="1.0" encoding="windows-1252"?><r><a /></r>""", minimized);
     }
 
     [Fact]
     public void Built_in_encodings_are_carried_through()
     {
-        // These resolve from the shared framework, with or without the code-pages provider -
-        // which is why the windows-1252 crash was easy to miss.
+        // Resolve without the code-pages provider, which is why the crash was easy to miss.
         Assert.StartsWith("""<?xml version="1.0" encoding="iso-8859-1"?>""",
                           Minimize("""<?xml version="1.0" encoding="iso-8859-1"?><r/>"""));
         Assert.StartsWith("""<?xml version="1.0" encoding="us-ascii"?>""",
@@ -140,12 +127,8 @@ public class MinimizeTests
     [Fact]
     public void A_system_doctype_keeps_its_keyword_where_Format_drops_it()
     {
-        /*
-         * The counterpart to DocumentTypeTests: XmlWriter writes SYSTEM correctly, so the two
-         * entry points disagree on the same document. Worth pinning because it shows the
-         * keyword is available at this level - the Format side omits it rather than lacking it.
-         * The trailing "[]" is an empty internal subset that XmlWriter adds.
-         */
+        // Format drops SYSTEM; XmlWriter keeps it, so the keyword is available - Format just
+        // omits it. The trailing "[]" is an empty internal subset XmlWriter adds.
         var minimized = Minimize("""<!DOCTYPE root SYSTEM "my.dtd"><root/>""");
 
         Assert.Contains("""<!DOCTYPE root SYSTEM "my.dtd"[]>""", minimized);

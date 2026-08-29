@@ -1,9 +1,5 @@
-namespace XmlFormatter.Tests.OptionBehaviour;
+namespace XmlFormatter.Tests.OptionBehavior;
 
-/// <summary>
-/// IndentLength is the number of spaces added per nesting level. It also sets the
-/// continuation indent for attributes pushed onto their own lines.
-/// </summary>
 public class IndentLengthTests
 {
     private const string Nested = "<r><a><b>t</b></a></r>";

@@ -17,14 +17,14 @@ it can find.
 ## Why this exists
 
 The baseline suite in `XmlFormatter.Tests` compares formatter output byte for byte. That
-catches behaviour changes and nothing else. The `O(n²)` sibling traversal fixed in #37 made
+catches behavior changes and nothing else. The `O(n²)` sibling traversal fixed in #37 made
 a 9.6 MB file take 16 seconds instead of 1.2, and produced **byte-identical output** the
 whole time - no output comparison could ever have flagged it. Cost has to be measured
 separately, which is what this project is for.
 
 ## generate
 
-Writes the sample corpus under `perf/`, all of it gitignored:
+Writes the sample corpus under `perf/`, all of it git-ignored:
 
 | Path                           | What                                                                  |
 |--------------------------------|-----------------------------------------------------------------------|
@@ -62,7 +62,7 @@ bench [--samples DIR] [--options NAME] [--save FILE] [--compare FILE]
 refer to the same settings.
 
 The scaling summary only prints for an ascending size ladder. The shape corpus is five
-unrelated documents in alphabetical order - comparing neighbours there produces ratios that
+unrelated documents in alphabetical order - comparing neighbors there produces ratios that
 look alarming and mean nothing.
 
 ## guard

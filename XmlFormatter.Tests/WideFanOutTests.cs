@@ -1,25 +1,14 @@
 using System.Security.Cryptography;
 using System.Text;
-using XmlFormatter;
 
 namespace XmlFormatter.Tests;
 
 /// <summary>
-/// Correctness coverage for wide-sibling traversal in PrintNode.
+/// 5000 siblings under one root, pinned by hash because a baseline file would be ~3 MB per
+/// option set. The widest Sample/ fixture holds only 17 children.
 ///
-/// The widest parent in any Sample/ fixture holds 17 children, so the fixture suite
-/// barely exercises the child-node loop. This formats a document with 5000 siblings
-/// under one root and pins the result by hash - a baseline file would be ~3 MB per
-/// option set, which is not worth committing.
-///
-/// Note what this does and does not do: it is an *output* check. It cannot detect a
-/// performance regression - the O(n^2) traversal this replaced produced byte-identical
-/// output. Guarding against that needs a scaling measurement, which belongs with the
-/// perf tooling, not here.
-///
-/// The expected hashes were recorded from the pre-fix formatter at 00df332, so they
-/// verify the rewritten traversal against the original behaviour rather than against
-/// a snapshot of itself.
+/// Hashes were recorded from the pre-fix formatter at 00df332, so they check the rewritten
+/// traversal against the original rather than against a snapshot of itself.
 /// </summary>
 public class WideFanOutTests
 {
@@ -41,8 +30,7 @@ public class WideFanOutTests
     [Fact]
     public void Synthetic_document_really_is_wide()
     {
-        // Guards the premise: if the generator changes shape, the test above stops
-        // covering what it claims to cover.
+        // If the generator changes shape, the test above stops covering what it claims to.
         var doc = new System.Xml.XmlDocument();
         doc.LoadXml(SyntheticXml.Orders(Records));
 

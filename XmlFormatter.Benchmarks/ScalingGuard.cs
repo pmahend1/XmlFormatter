@@ -3,16 +3,11 @@ using System.Diagnostics;
 namespace XmlFormatter.Benchmarks;
 
 /// <summary>
-/// The only check here that can actually catch a performance regression.
+/// The only check that can catch a performance regression: the O(n^2) traversal produced
+/// byte-identical output, so no baseline could have flagged it. Measures one document at two
+/// sizes and asserts work grows no faster than input.
 ///
-/// The baseline suite in XmlFormatter.Tests compares output, and the O(n^2) traversal that
-/// prompted all of this produced byte-identical output - no output comparison could ever
-/// have flagged it. What gives it away is the *shape* of the cost curve, so this measures
-/// the same document at two sizes and asserts that work grows no faster than input.
-///
-/// Ratios, not absolute times: a slow CI runner moves both measurements together and the
-/// ratio survives. That is also why this runs in-process rather than through the CLI -
-/// both halves then share one JIT and one heap, and only the size differs.
+/// Ratios, not absolute times, and in-process - so a slow runner moves both halves together.
 /// </summary>
 internal static class ScalingGuard
 {
@@ -27,10 +22,7 @@ internal static class ScalingGuard
     [
         new("orders/default", "default", PreFormatted: false),
 
-        /*
-         * Already-formatted input with PreserveNewLines on: the editor's real case, and the
-         * more demanding one - retained whitespace nodes roughly double the sibling count.
-         */
+        // The editor's real case: retained whitespace roughly doubles the sibling count.
         new("orders/preserve-newlines",
             "preserve-newlines",
             PreFormatted: true,
@@ -122,11 +114,8 @@ internal static class ScalingGuard
         var minified = SampleGenerator.Orders(records);
         var document = preFormatted ? formatter.Format(minified) : minified;
 
-        /*
-         * Fastest of five, not the median. Noise on this machine only ever adds time - a GC
-         * pause, a descheduled thread - so the quickest run is the closest to the work the
-         * formatter actually does, and it is far steadier across runs than the median.
-         */
+        // Fastest of five, not the median: noise only ever adds time, so the quickest run is
+        // closest to the real work and far steadier across runs.
         var fastest = double.MaxValue;
 
         for (var run = 0; run < RunsPerMeasurement; run++)
