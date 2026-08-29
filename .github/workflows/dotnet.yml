@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
 
       - name: Dotnet Build
         if: github.ref_type != 'tag'
@@ -40,14 +40,14 @@ jobs:
           "ARTIFACT_PATH=$artifactPath" >> $env:GITHUB_OUTPUT
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: github.ref_type == 'tag'
         with:
           name: ${{ steps.bundle.outputs.ZIP_FILENAME }}
           path: ${{ steps.bundle.outputs.ARTIFACT_PATH }}
 
       - name: Github Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: github.ref_type == 'tag'
         with:
           generate_release_notes: true
