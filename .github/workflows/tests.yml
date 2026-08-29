@@ -9,12 +9,20 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test:
-    # Not windows-latest, unlike the release job. The formatter emits Environment.NewLine, and
-    # the Baseline/ files were recorded with LF, so FixtureFormattingTests compares CRLF output
-    # against LF baselines on Windows and fails. See the note in the PR before changing this.
-    runs-on: ubuntu-latest
+    strategy:
+      # Both runners always report. A Windows-only line-ending failure is exactly the kind of
+      # thing this matrix exists to surface, so it must not cancel the Linux run that proves
+      # the failure is platform-specific.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
@@ -36,24 +44,96 @@ jobs:
         # which the test project wires in through RunSettingsFilePath.
         run: dotnet test --configuration Release --no-build --collect:"XPlat Code Coverage"
 
+      - name: Upload coverage data
+        # One OS is enough: coverage measures which lines ran, which does not differ by
+        # platform. Uploading from both would race on the artifact name.
+        if: always() && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-data
+          path: XmlFormatter.Tests/TestResults/**/coverage.cobertura.xml
+
+  coverage:
+    needs: test
+    # Reports even when tests fail - a coverage drop and a red suite often have the same cause,
+    # and the number is more useful attached to the failure than withheld from it.
+    if: always()
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v6
+        with:
+          name: coverage-data
+          path: head-coverage
+
+      - name: Checkout base commit
+        # Only for the before/after delta. Fails soft: without it the comment still reports
+        # the PR's own coverage, just with no comparison.
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        id: base_checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Measure base coverage
+        if: github.event_name == 'pull_request' && steps.base_checkout.outcome == 'success'
+        continue-on-error: true
+        working-directory: base
+        run: dotnet test --configuration Release --collect:"XPlat Code Coverage"
+
       - name: Install ReportGenerator
-        if: always()
         run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
 
       - name: Build coverage report
-        if: always()
         run: |
           reportgenerator \
-            -reports:"XmlFormatter.Tests/TestResults/**/coverage.cobertura.xml" \
+            -reports:"head-coverage/**/coverage.cobertura.xml" \
             -targetdir:"coverage" \
             -reporttypes:"MarkdownSummaryGithub;Html"
 
       - name: Publish coverage to job summary
-        if: always()
         run: cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Build coverage comment
+        id: comment
+        run: python3 .github/scripts/coverage_comment.py
+
+      - name: Post coverage comment
+        if: github.event_name == 'pull_request' && hashFiles('coverage-comment.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          marker='<!-- coverage-report -->'
+          existing=$(gh api "repos/$REPO/issues/$PR/comments" \
+                       --jq "[.[] | select(.body | contains(\"$marker\"))][0].id // empty")
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" \
+              --field body="$(cat coverage-comment.md)" > /dev/null
+            echo "Updated comment $existing"
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" \
+              --field body="$(cat coverage-comment.md)" > /dev/null
+            echo "Posted new comment"
+          fi
+
       - name: Upload HTML coverage report
-        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: coverage-report

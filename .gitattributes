@@ -1,0 +1,6 @@
+# The fixture suite compares formatter output against committed baselines, and the CI matrix
+# runs it on Windows as well as Linux. Pinning the test data to LF keeps a contributor's
+# core.autocrlf setting from changing what those tests read. Source files are left to git's
+# defaults deliberately - this is about test data, not a repo-wide line-ending policy.
+Sample/*.xml text eol=lf
+XmlFormatter.Tests/Baseline/*.txt text eol=lf

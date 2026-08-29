@@ -43,6 +43,12 @@ public class WideFanOutTests
         Assert.Equal(Records, siblings);
     }
 
+    /// <summary>
+    /// Hashed with LF endings. The formatter emits Environment.NewLine, and these hashes were
+    /// recorded on a platform that means LF by that, so hashing raw output would fail every
+    /// case on Windows for a reason that has nothing to do with sibling traversal.
+    /// <see cref="LineEndingTests"/> covers the endings themselves.
+    /// </summary>
     private static string Sha256(string text) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text.Replace("\r\n", "\n")))).ToLowerInvariant();
 }
