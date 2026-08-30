@@ -10,28 +10,14 @@ namespace XmlFormatter.Tests;
 /// </summary>
 public class IdempotencyTests
 {
-    /*
-     * XMLFile8's output does not parse: its DOCTYPE loses the SYSTEM keyword on the way out, so
-     * there is no second pass to compare. That is the documented DTD limitation, pinned by
-     * DocumentTypeTests.A_system_identifier_should_keep_its_keyword. Only_one_fixture_cannot_be_reformatted
-     * fails if that ever stops being the only one, so this exclusion cannot quietly widen.
-     */
-    private const string OutputDoesNotParse = "XMLFile8.xml";
-
     public static TheoryData<string, string> Cases()
     {
         var data = new TheoryData<string, string>();
         foreach (var path in TestPaths.Fixtures())
         {
-            var fixture = Path.GetFileName(path);
-            if (fixture == OutputDoesNotParse)
-            {
-                continue;
-            }
-
             foreach (var (name, _) in OptionSets.All)
             {
-                data.Add(fixture, name);
+                data.Add(Path.GetFileName(path), name);
             }
         }
         return data;
@@ -51,14 +37,16 @@ public class IdempotencyTests
     }
 
     [Fact]
-    public void Only_one_fixture_cannot_be_reformatted()
+    public void Every_fixture_can_be_reformatted()
     {
+        // The formatter must be able to read its own output back - XMLFile8 could not until the
+        // DOCTYPE SYSTEM keyword was emitted, and it is the reason this test names the offenders.
         var unparseable = TestPaths.Fixtures()
                                    .Select(path => Path.GetFileName(path))
                                    .Where(SecondFormatThrows)
                                    .ToList();
 
-        Assert.Equal(new[] { OutputDoesNotParse }, unparseable);
+        Assert.Empty(unparseable);
     }
 
     /*

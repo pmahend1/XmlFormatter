@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE myElement "myElement.dtd">
+<!DOCTYPE myElement SYSTEM "myElement.dtd">
 <myElement>
     <content>This is an XML document with an external DTD.</content>
 

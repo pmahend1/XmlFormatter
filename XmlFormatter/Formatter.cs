@@ -193,9 +193,20 @@ public partial class Formatter
                             docTypeText += $"]";
                         }
 
+                        /*
+                         * PUBLIC takes two literals - the public id then the system id - so the
+                         * system id is written bare after one. On its own it needs its own
+                         * keyword, and without it `<!DOCTYPE root "my.dtd">` is not something any
+                         * parser will read back, which also meant the formatter's own output for
+                         * such a document could not be formatted a second time.
+                         */
                         if (xml.DocumentType.PublicId is not null)
                         {
                             docTypeText += $" PUBLIC \"{xml.DocumentType.PublicId}\"";
+                        }
+                        else if (xml.DocumentType.SystemId is not null)
+                        {
+                            docTypeText += " SYSTEM";
                         }
 
                         if (xml.DocumentType.SystemId is not null)
