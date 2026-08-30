@@ -13,7 +13,7 @@ namespace XmlFormatter;
 /// one across threads corrupts output silently. Sequential reuse is fine, including after a
 /// throw. Construction is cheap.
 /// </summary>
-public class Formatter
+public partial class Formatter
 {
     private int _currentAttributeSpace;
 
@@ -32,6 +32,10 @@ public class Formatter
         NewLineOnAttributes = false,
         NamespaceHandling = NamespaceHandling.OmitDuplicates,
     };
+
+    /// <summary>Runs of one or more line breaks. Built at compile time, not on first use.</summary>
+    [GeneratedRegex(@"(\r?\n)+")]
+    private static partial Regex NewLineRuns();
 
     // Without this, Minimize throws ArgumentException on windows-1252 and other code pages -
     // .NET Core dropped them from the default provider. No package needed on net10.0.
@@ -146,7 +150,15 @@ public class Formatter
         }
         else if (_currentOptions.AddXmlDeclarationIfMissing)
         {
-            sb.AppendLine("""<?xml version="1.0" encoding="UTF-8" ?>""");
+            /*
+             * Built through the same rule as a declaration that was already present. On a second
+             * format the injected one *is* present, so it takes the branch above - and if the two
+             * branches disagree about the space before ?>, formatting twice changes the output.
+             */
+            _lastNodeType = XmlNodeType.XmlDeclaration;
+            var declarationEnd = _currentOptions.AddSpaceBeforeEndOfXmlDeclaration ? " ?>" : "?>";
+            sb.Append($"""<?xml version="1.0" encoding="UTF-8"{declarationEnd}""")
+              .Append(Environment.NewLine);
         }
 
         XmlNode? previousSibling = null;
@@ -419,13 +431,17 @@ public class Formatter
             return null;
         }
 
-        // Treat inline whitespace content like Text for indentation (see #209)
+        /*
+         * Treat inline whitespace content like Text for indentation (see #209). Whitespace that
+         * is the sole child counts whether or not it spans lines: it is written as content, so
+         * the element must not also be indented around it - that double count is what grew a
+         * line per format on <r>\n  </r>.
+         */
         var firstChildIsInlineContent =
             node.FirstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
             || (_currentOptions.PreserveNewLines
                 && node.FirstChild == node.LastChild
-                && node.FirstChild is { NodeType: XmlNodeType.Whitespace, Value: not null } firstWs
-                && firstWs.Value.Contains('\n') is false);
+                && node.FirstChild is { NodeType: XmlNodeType.Whitespace });
 
         if (firstChildIsInlineContent is false)
         {
@@ -525,11 +541,18 @@ public class Formatter
                     for (var i = 0; i < lines.Length; i++)
                     {
                         var line = lines[i];
-                        if (i == 0 && string.IsNullOrEmpty(line.Trim()))
+                        if (i is 0 && string.IsNullOrWhiteSpace(line))
                         {
-                            sb.Append($"{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
+                            /*
+                             * Skipped, not indented. Every later line writes its own newline and
+                             * indent, so an indent here is a run of spaces stranded after the start
+                             * tag - and on the next format that run is the text node's leading line,
+                             * which lands in this same branch with another indent written behind it.
+                             */
+                            continue;
                         }
-                        else if (i == lines.Length - 1)
+
+                        if (i == lines.Length - 1)
                         {
                             if (string.IsNullOrEmpty(line.Trim()) is false)
                             {
@@ -552,29 +575,35 @@ public class Formatter
                 }
 
                 /*
-                 * Only emit whitespace that is actual element content (no element siblings),
-                 * not structural indentation between siblings (which is regenerated). See #209.
+                 * Only whitespace that is a node's sole content is content; anything with a
+                 * sibling is structural indentation, and the formatter regenerates that. The
+                 * guard used to ask whether a sibling was an *Element*, which let the indent
+                 * around a comment or CDATA through as content on top of the indent generated
+                 * for it - and that emitted indent came back as a whitespace node on the next
+                 * format, so Format(Format(x)) grew a line per pass and never settled.
+                 *
+                 * previousSibling is the threaded parameter, not node.PreviousSibling: reading
+                 * that rescans the parent from FirstChild (#46). See #209 for why any of this
+                 * whitespace is kept at all.
                  */
-                var hasElementSibling = previousSibling is { NodeType: XmlNodeType.Element }
-                                        || node.NextSibling is { NodeType: XmlNodeType.Element };
+                var hasSibling = previousSibling is not null || node.NextSibling is not null;
 
-                if (hasElementSibling)
+                if (hasSibling)
                 {
                     return true;
                 }
 
-                if (node.Value.Contains('\n') is false)
-                {
-                    // Inline whitespace — signal Text so closing tag stays inline
-                    sb.Append(node.Value);
-                    _lastNodeType = XmlNodeType.Text;
-                }
-                else
-                {
-                    // Collapse newline runs, then append
-                    var collapsed = Regex.Replace(node.Value, @"(\r?\n)+", Environment.NewLine);
-                    sb.Append(collapsed);
-                }
+                /*
+                 * Runs of newlines collapse to one; blank lines are AddEmptyLineBetweenElements'
+                 * job, not this one. Text either way, so the closing tag follows the whitespace
+                 * directly rather than adding a newline and an indent on top of content the
+                 * element already carries.
+                 */
+                sb.Append(node.Value.Contains('\n') ?
+                          NewLineRuns().Replace(node.Value, Environment.NewLine) :
+                          node.Value);
+                _lastNodeType = XmlNodeType.Text;
+
                 return true;
             case XmlNodeType.Element: //Done
             case XmlNodeType.None:

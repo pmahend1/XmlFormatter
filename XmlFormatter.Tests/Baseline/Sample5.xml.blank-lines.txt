@@ -6,5 +6,4 @@
     <mapping pid="705302" />
 
     <!-- documentname -->
-
 </mappings>

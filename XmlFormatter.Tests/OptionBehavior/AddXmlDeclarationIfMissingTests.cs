@@ -8,7 +8,7 @@ public class AddXmlDeclarationIfMissingTests
         var formatted = TestFormatter.Format("<r/>", new Options());
 
         Assert.Equal("""
-            <?xml version="1.0" encoding="UTF-8" ?>
+            <?xml version="1.0" encoding="UTF-8"?>
             <r />
             """, formatted);
     }
