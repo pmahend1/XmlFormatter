@@ -27,4 +27,25 @@ internal static class SyntheticXml
         sb.Append("</orders>");
         return sb.ToString();
     }
+
+    /// <summary>
+    /// A single chain <paramref name="depth"/> elements deep with one text leaf at the bottom.
+    /// The deepest Sample/ fixture nests 6 levels, so nothing there reaches the traversal
+    /// depth that used to overflow the stack.
+    /// </summary>
+    public static string Chain(int depth)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("""<?xml version="1.0" encoding="utf-8"?>""");
+        for (var level = 0; level < depth; level++)
+        {
+            sb.Append($"<level depth=\"{level}\">");
+        }
+        sb.Append("leaf");
+        for (var level = 0; level < depth; level++)
+        {
+            sb.Append("</level>");
+        }
+        return sb.ToString();
+    }
 }

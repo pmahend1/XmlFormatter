@@ -205,7 +205,7 @@ public class Formatter
                         }
 
                         _lastNodeType = XmlNodeType.Document;
-                        PrintNode(documentElement, ref sb, previousSibling);
+                        PrintNode(documentElement, sb, previousSibling);
                         if (node.NextSibling != null)
                         {
                             sb.Append(Environment.NewLine);
@@ -214,7 +214,7 @@ public class Formatter
                         break;
                     }
                 case XmlNodeType.Comment:
-                    PrintNode(node, ref sb, previousSibling);
+                    PrintNode(node, sb, previousSibling);
                     sb.Append(Environment.NewLine);
                     break;
                 case XmlNodeType.None:
@@ -233,161 +233,88 @@ public class Formatter
                 case XmlNodeType.EndEntity:
                 case XmlNodeType.XmlDeclaration:
                 default:
-                    PrintNode(node, ref sb, previousSibling);
+                    PrintNode(node, sb, previousSibling);
                     break;
             }
         }
         return sb.ToString();
     }
 
+    /// <summary>Writes <paramref name="node"/> and everything below it.</summary>
     /// <param name="previousSibling">
     /// The node before <paramref name="node"/> under the same parent, or null when it is first.
     /// </param>
-    private void PrintNode(XmlNode node, ref StringBuilder sb, XmlNode? previousSibling)
+    private void PrintNode(XmlNode node, StringBuilder sb, XmlNode? previousSibling)
+    {
+        /*
+         * An explicit stack, not recursion. This used to call itself once per nesting level,
+         * and at roughly a kilobyte of frame per level a few hundred levels exhausted the
+         * ~1 MB stack a thread-pool thread gets - which is the stack XmlFormatter.CommandLine
+         * runs on, because it resumes there after awaiting stdin. That was a hard stack
+         * overflow rather than a catchable exception, so the process died with no output and
+         * no error for the caller to report. Depth is now bounded by the heap.
+         */
+        var openElements = new Stack<OpenElement>();
+
+        var rootElement = WriteNode(node, sb, previousSibling);
+        if (rootElement is null)
+        {
+            return;
+        }
+        openElements.Push(rootElement);
+
+        while (openElements.Count > 0)
+        {
+            var element = openElements.Peek();
+
+            if (element.LastWrittenChild is { } lastWrittenChild)
+            {
+                WriteBlankLineAfterChild(lastWrittenChild, element.ChildCount, sb);
+            }
+
+            if (element.NextChild is not { } child)
+            {
+                WriteClosingTag(element.Node, sb);
+                openElements.Pop();
+                continue;
+            }
+
+            /*
+             * The child that was written last is also the one before this child, so the frame
+             * supplies what #46 threaded through as a parameter - and for the same reason:
+             * XmlLinkedNode has no back-pointer, so reading PreviousSibling rescans the parent
+             * from FirstChild, O(k) per child and O(k^2) per parent.
+             */
+            var previousChild = element.LastWrittenChild;
+
+            element.NextChild = child.NextSibling;
+            element.LastWrittenChild = child;
+
+            WriteSeparatorBeforeChild(child, previousChild, sb);
+
+            if (WriteNode(child, sb, previousChild) is { } childElement)
+            {
+                openElements.Push(childElement);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Writes everything of <paramref name="node"/> that precedes its children - a leaf form in
+    /// full, or a start tag with its attributes.
+    /// </summary>
+    /// <returns>
+    /// The stack entry to descend into when <paramref name="node"/> has children left to write,
+    /// or <see langword="null"/> when the node has been written in full.
+    /// </returns>
+    private OpenElement? WriteNode(XmlNode node, StringBuilder sb, XmlNode? previousSibling)
     {
         var prevNode = _lastNodeType;
         _lastNodeType = node.NodeType;
 
-        switch (node.NodeType)
+        if (TryWriteLeafNode(node, sb, prevNode, previousSibling))
         {
-            case XmlNodeType.CDATA:
-                var newLine = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : Environment.NewLine;
-                var spaces = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : new string(' ', _currentStartLength);
-                Debug.WriteLine($"CDATA value: {node.Value}");
-
-                sb.Append(newLine)
-                  .Append(spaces)
-                  .Append($"<![CDATA[{node.Value}]]>");
-                return;
-
-            case XmlNodeType.Comment:
-                var shouldIndent = true;
-                if (_currentOptions.PreserveCommentPlacement)
-                {
-                    shouldIndent = previousSibling is { NodeType: XmlNodeType.Whitespace, Value: not null }
-                                   && previousSibling.Value.Contains('\n');
-                }
-                if (shouldIndent && node.ParentNode?.NodeType is XmlNodeType.Document)
-                {
-                    shouldIndent = false;
-                }
-                if (shouldIndent && _currentOptions.PreserveCommentPlacement)
-                {
-                    sb.AppendLine();
-                }
-                var indent = shouldIndent ? new string(' ', _currentStartLength) : string.Empty;
-                string commentText;
-                if (_currentOptions.PreserveWhiteSpacesInComment)
-                {
-                    commentText = node.OuterXml;
-                }
-                else if (_currentOptions.WrapCommentTextWithSpaces)
-                {
-                    commentText = $"<!-- {node.Value?.Trim()} -->";
-                }
-                else
-                {
-                    commentText = $"<!--{node.Value?.Trim()}-->";
-                }
-                sb.Append(indent).Append(commentText);
-
-                return;
-            case XmlNodeType.DocumentType:
-            case XmlNodeType.SignificantWhitespace:
-                return;
-
-            case XmlNodeType.EndElement:
-                Debug.WriteLine("End");
-                break;
-
-            case XmlNodeType.EndEntity:
-            case XmlNodeType.EntityReference:
-                sb.Append(node.OuterXml);
-                return;
-
-            case XmlNodeType.ProcessingInstruction:
-                sb.AppendLine($"<?{node.Name} {node.Value}?>");
-                return;
-
-
-            case XmlNodeType.Text:
-                if ((node.ParentNode?.ParentNode is XmlElement element &&
-                    element.HasAttribute("xml:space") &&
-                    element.GetAttribute("xml:space") is "preserve") || node.OuterXml.Contains('\n') is false)
-                {
-                    sb.Append(node.OuterXml);
-                }
-                else
-                {
-                    // LF, not Environment.NewLine: parsing normalizes every line ending in text
-                    // to LF (XML 1.0 2.11), so the DOM never holds CRLF. Searching for the
-                    // platform newline skipped this branch on Windows and emitted raw text.
-                    var text = node.OuterXml;
-                    var lines = text.Split('\n');
-                    for (var i = 0; i < lines.Length; i++)
-                    {
-                        var line = lines[i];
-                        if (i == 0 && string.IsNullOrEmpty(line.Trim()))
-                        {
-                            sb.Append($"{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
-                        }
-                        else if (i == lines.Length - 1)
-                        {
-                            if (string.IsNullOrEmpty(line.Trim()) is false)
-                            {
-                                sb.Append($"{Environment.NewLine}{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
-                            }
-                            sb.Append($"{Environment.NewLine}{new string(' ', _currentStartLength)}");
-                        }
-                        else
-                        {
-                            sb.Append($"{Environment.NewLine}{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
-                        }
-                    }
-                }
-
-                return;
-            case XmlNodeType.Whitespace:
-                if (_currentOptions.PreserveNewLines is false || string.IsNullOrEmpty(node.Value))
-                {
-                    return;
-                }
-
-                /*
-                 * Only emit whitespace that is actual element content (no element siblings),
-                 * not structural indentation between siblings (which is regenerated). See #209.
-                 */
-                var hasElementSibling = previousSibling is { NodeType: XmlNodeType.Element }
-                                        || node.NextSibling is { NodeType: XmlNodeType.Element };
-
-                if (hasElementSibling)
-                {
-                    return;
-                }
-
-                if (node.Value.Contains('\n') is false)
-                {
-                    // Inline whitespace — signal Text so closing tag stays inline
-                    sb.Append(node.Value);
-                    _lastNodeType = XmlNodeType.Text;
-                }
-                else
-                {
-                    // Collapse newline runs, then append
-                    var collapsed = Regex.Replace(node.Value, @"(\r?\n)+", Environment.NewLine);
-                    sb.Append(collapsed);
-                }
-                return;
-            case XmlNodeType.Element: //Done
-            case XmlNodeType.None:
-            case XmlNodeType.Notation:
-            case XmlNodeType.XmlDeclaration: //Done
-            case XmlNodeType.Document: //Done
-            case XmlNodeType.DocumentFragment: //Done
-            case XmlNodeType.Entity:
-            case XmlNodeType.Attribute:  //handled down
-            default:
-                break;
+            return null;
         }
 
         //print start tag
@@ -473,105 +400,263 @@ public class Formatter
             //else see NoChildEndTag
         }
 
-        //prints child nodes
-        if (node.HasChildNodes)
+        //if no children end tag
+        if (node.HasChildNodes is false)
         {
-            // Treat inline whitespace content like Text for indentation (see #209)
-            var firstChildIsInlineContent =
-                node.FirstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
-                || (_currentOptions.PreserveNewLines
-                    && node.FirstChild == node.LastChild
-                    && node.FirstChild is { NodeType: XmlNodeType.Whitespace, Value: not null } firstWs
-                    && !firstWs.Value.Contains('\n'));
+            #region NoChildEndTag
 
-            if (!firstChildIsInlineContent)
+            if (_currentOptions.UseSelfClosingTags)
             {
-                _currentStartLength += _currentOptions.IndentLength;
+                sb.Append(_currentOptions.AddSpaceBeforeSelfClosingTag ? " />" : "/>");
+            }
+            else
+            {
+                sb.Append($"></{node.Name}>");
             }
 
-            var childCount = _currentOptions.AddEmptyLineBetweenElements ? node.ChildNodes.Count : 0;
+            #endregion NoChildEndTag
 
-            /*
-             * The previous sibling is carried along rather than read from the node: XmlLinkedNode
-             * has no back-pointer, so PreviousSibling rescans the parent's children from
-             * FirstChild on every access. That is O(k) per child - O(k^2) per parent - and
-             * PreserveNewLines pays it twice over, because the retained whitespace nodes roughly
-             * double k. The loop already knows the answer for free. See #37 for the sibling
-             * rewrite that fixed the same shape of bug in this loop's indexing.
-             */
-            XmlNode? previousChild = null;
+            return null;
+        }
 
-            for (var currentChild = node.FirstChild;
-                 currentChild is not null;
-                 previousChild = currentChild, currentChild = currentChild.NextSibling)
-            {
-                var commentNoNewLine = currentChild.NodeType is XmlNodeType.Comment
-                                       && _currentOptions.PreserveCommentPlacement
-                                       && previousChild?.NodeType is XmlNodeType.Element or XmlNodeType.Whitespace;
-                if (currentChild.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA
-                                         or XmlNodeType.EntityReference
-                                         or XmlNodeType.SignificantWhitespace
-                                         or XmlNodeType.Whitespace)
-                    && _lastNodeType is not XmlNodeType.Text
-                    && commentNoNewLine is false)
+        // Treat inline whitespace content like Text for indentation (see #209)
+        var firstChildIsInlineContent =
+            node.FirstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
+            || (_currentOptions.PreserveNewLines
+                && node.FirstChild == node.LastChild
+                && node.FirstChild is { NodeType: XmlNodeType.Whitespace, Value: not null } firstWs
+                && firstWs.Value.Contains('\n') is false);
+
+        if (firstChildIsInlineContent is false)
+        {
+            _currentStartLength += _currentOptions.IndentLength;
+        }
+
+        return new OpenElement(node,
+                               childCount: _currentOptions.AddEmptyLineBetweenElements ? node.ChildNodes.Count : 0);
+    }
+
+    /// <summary>
+    /// Writes the node forms that have nothing to descend into - text, comments, CDATA and the
+    /// rest of the leaves.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when the node was written in full, <see langword="false"/> when it
+    /// still needs a start tag.
+    /// </returns>
+    private bool TryWriteLeafNode(XmlNode node, StringBuilder sb, XmlNodeType prevNode, XmlNode? previousSibling)
+    {
+        switch (node.NodeType)
+        {
+            case XmlNodeType.CDATA:
+                var newLine = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : Environment.NewLine;
+                var spaces = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : new string(' ', _currentStartLength);
+                Debug.WriteLine($"CDATA value: {node.Value}");
+
+                sb.Append(newLine)
+                  .Append(spaces)
+                  .Append($"<![CDATA[{node.Value}]]>");
+                return true;
+
+            case XmlNodeType.Comment:
+                var shouldIndent = true;
+                if (_currentOptions.PreserveCommentPlacement)
                 {
-                    sb.Append(Environment.NewLine);
+                    shouldIndent = previousSibling is { NodeType: XmlNodeType.Whitespace, Value: not null }
+                                   && previousSibling.Value.Contains('\n');
                 }
-                PrintNode(currentChild, ref sb, previousChild);
-
-                if (_currentOptions.AddEmptyLineBetweenElements
-                    && currentChild.NodeType is XmlNodeType.Element
-                    && currentChild.NextSibling?.NodeType is not (XmlNodeType.Text or XmlNodeType.SignificantWhitespace)
-                    && childCount > 2
-                    && currentChild.NextSibling is not null)
+                if (shouldIndent && node.ParentNode?.NodeType is XmlNodeType.Document)
+                {
+                    shouldIndent = false;
+                }
+                if (shouldIndent && _currentOptions.PreserveCommentPlacement)
                 {
                     sb.AppendLine();
                 }
-            }
+                var indent = shouldIndent ? new string(' ', _currentStartLength) : string.Empty;
+                string commentText;
+                if (_currentOptions.PreserveWhiteSpacesInComment)
+                {
+                    commentText = node.OuterXml;
+                }
+                else if (_currentOptions.WrapCommentTextWithSpaces)
+                {
+                    commentText = $"<!-- {node.Value?.Trim()} -->";
+                }
+                else
+                {
+                    commentText = $"<!--{node.Value?.Trim()}-->";
+                }
+                sb.Append(indent).Append(commentText);
 
-            //close tag after all child nodes
-            if (node.NodeType is XmlNodeType.Comment or
-                                 XmlNodeType.CDATA or
-                                 XmlNodeType.DocumentType or
-                                 XmlNodeType.Text)
-            {
-                return;
-            }
+                return true;
+            case XmlNodeType.DocumentType:
+            case XmlNodeType.SignificantWhitespace:
+                return true;
 
-            if (_currentStartLength >= _currentOptions.IndentLength &&
-                _lastNodeType is not (XmlNodeType.Text or
-                                      XmlNodeType.CDATA or
-                                      XmlNodeType.DocumentType or
-                                      XmlNodeType.EntityReference))
-            {
-                _currentStartLength -= _currentOptions.IndentLength;
-            }
-            var newLine = _lastNodeType is not (XmlNodeType.Text or
-                                                XmlNodeType.CDATA or
-                                                XmlNodeType.EntityReference) ? Environment.NewLine : string.Empty;
+            case XmlNodeType.EndElement:
+                Debug.WriteLine("End");
+                return false;
 
-            var spaces = _lastNodeType is not (XmlNodeType.Text or
-                                               XmlNodeType.EntityReference or
-                                               XmlNodeType.CDATA) ? new string(' ', _currentStartLength) : string.Empty;
-            sb.Append(newLine)
-                .Append(spaces)
-                .Append($"</{node.Name}>");
+            case XmlNodeType.EndEntity:
+            case XmlNodeType.EntityReference:
+                sb.Append(node.OuterXml);
+                return true;
 
-            _lastNodeType = node.NodeType;
+            case XmlNodeType.ProcessingInstruction:
+                sb.AppendLine($"<?{node.Name} {node.Value}?>");
+                return true;
+
+
+            case XmlNodeType.Text:
+                if ((node.ParentNode?.ParentNode is XmlElement element &&
+                    element.HasAttribute("xml:space") &&
+                    element.GetAttribute("xml:space") is "preserve") || node.OuterXml.Contains('\n') is false)
+                {
+                    sb.Append(node.OuterXml);
+                }
+                else
+                {
+                    // LF, not Environment.NewLine: parsing normalizes every line ending in text
+                    // to LF (XML 1.0 2.11), so the DOM never holds CRLF. Searching for the
+                    // platform newline skipped this branch on Windows and emitted raw text.
+                    var text = node.OuterXml;
+                    var lines = text.Split('\n');
+                    for (var i = 0; i < lines.Length; i++)
+                    {
+                        var line = lines[i];
+                        if (i == 0 && string.IsNullOrEmpty(line.Trim()))
+                        {
+                            sb.Append($"{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
+                        }
+                        else if (i == lines.Length - 1)
+                        {
+                            if (string.IsNullOrEmpty(line.Trim()) is false)
+                            {
+                                sb.Append($"{Environment.NewLine}{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
+                            }
+                            sb.Append($"{Environment.NewLine}{new string(' ', _currentStartLength)}");
+                        }
+                        else
+                        {
+                            sb.Append($"{Environment.NewLine}{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
+                        }
+                    }
+                }
+
+                return true;
+            case XmlNodeType.Whitespace:
+                if (_currentOptions.PreserveNewLines is false || string.IsNullOrEmpty(node.Value))
+                {
+                    return true;
+                }
+
+                /*
+                 * Only emit whitespace that is actual element content (no element siblings),
+                 * not structural indentation between siblings (which is regenerated). See #209.
+                 */
+                var hasElementSibling = previousSibling is { NodeType: XmlNodeType.Element }
+                                        || node.NextSibling is { NodeType: XmlNodeType.Element };
+
+                if (hasElementSibling)
+                {
+                    return true;
+                }
+
+                if (node.Value.Contains('\n') is false)
+                {
+                    // Inline whitespace — signal Text so closing tag stays inline
+                    sb.Append(node.Value);
+                    _lastNodeType = XmlNodeType.Text;
+                }
+                else
+                {
+                    // Collapse newline runs, then append
+                    var collapsed = Regex.Replace(node.Value, @"(\r?\n)+", Environment.NewLine);
+                    sb.Append(collapsed);
+                }
+                return true;
+            case XmlNodeType.Element: //Done
+            case XmlNodeType.None:
+            case XmlNodeType.Notation:
+            case XmlNodeType.XmlDeclaration: //Done
+            case XmlNodeType.Document: //Done
+            case XmlNodeType.DocumentFragment: //Done
+            case XmlNodeType.Entity:
+            case XmlNodeType.Attribute:  //handled down
+            default:
+                return false;
         }
-        //if no children end tag
-        #region NoChildEndTag
+    }
 
-        else if (_currentOptions.UseSelfClosingTags)
+    /// <summary>
+    /// Writes the line break that separates <paramref name="child"/> from what precedes it,
+    /// where the node types on either side call for one.
+    /// </summary>
+    private void WriteSeparatorBeforeChild(XmlNode child, XmlNode? previousChild, StringBuilder sb)
+    {
+        var commentNoNewLine = child.NodeType is XmlNodeType.Comment
+                               && _currentOptions.PreserveCommentPlacement
+                               && previousChild?.NodeType is XmlNodeType.Element or XmlNodeType.Whitespace;
+
+        if (child.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA
+                                 or XmlNodeType.EntityReference
+                                 or XmlNodeType.SignificantWhitespace
+                                 or XmlNodeType.Whitespace)
+            && _lastNodeType is not XmlNodeType.Text
+            && commentNoNewLine is false)
         {
-            sb.Append(_currentOptions.AddSpaceBeforeSelfClosingTag ? " />" : "/>");
+            sb.Append(Environment.NewLine);
         }
-        else
+    }
+
+    /// <summary>
+    /// Applies <see cref="Options.AddEmptyLineBetweenElements"/> to the child whose subtree has
+    /// just been written.
+    /// </summary>
+    private void WriteBlankLineAfterChild(XmlNode child, int childCount, StringBuilder sb)
+    {
+        if (_currentOptions.AddEmptyLineBetweenElements
+            && child.NodeType is XmlNodeType.Element
+            && child.NextSibling?.NodeType is not (XmlNodeType.Text or XmlNodeType.SignificantWhitespace)
+            && childCount > 2
+            && child.NextSibling is not null)
         {
-            sb.Append($"></{node.Name}>");
+            sb.AppendLine();
+        }
+    }
+
+    /// <summary>Closes a node whose children have all been written, and unwinds its indent.</summary>
+    private void WriteClosingTag(XmlNode node, StringBuilder sb)
+    {
+        if (node.NodeType is XmlNodeType.Comment or
+                             XmlNodeType.CDATA or
+                             XmlNodeType.DocumentType or
+                             XmlNodeType.Text)
+        {
+            return;
         }
 
-        #endregion NoChildEndTag
+        if (_currentStartLength >= _currentOptions.IndentLength &&
+            _lastNodeType is not (XmlNodeType.Text or
+                                  XmlNodeType.CDATA or
+                                  XmlNodeType.DocumentType or
+                                  XmlNodeType.EntityReference))
+        {
+            _currentStartLength -= _currentOptions.IndentLength;
+        }
+        var newLine = _lastNodeType is not (XmlNodeType.Text or
+                                            XmlNodeType.CDATA or
+                                            XmlNodeType.EntityReference) ? Environment.NewLine : string.Empty;
+
+        var spaces = _lastNodeType is not (XmlNodeType.Text or
+                                           XmlNodeType.EntityReference or
+                                           XmlNodeType.CDATA) ? new string(' ', _currentStartLength) : string.Empty;
+        sb.Append(newLine)
+            .Append(spaces)
+            .Append($"</{node.Name}>");
+
+        _lastNodeType = node.NodeType;
     }
 
     [SuppressMessage("Performance", "CA1822:Mark members as static")]
