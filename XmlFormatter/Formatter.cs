@@ -149,10 +149,11 @@ public class Formatter
             sb.AppendLine("""<?xml version="1.0" encoding="UTF-8" ?>""");
         }
 
-        for (var i = 0; i < xml.ChildNodes.Count; i++)
+        XmlNode? previousSibling = null;
+
+        for (var node = xml.FirstChild; node is not null; previousSibling = node, node = node.NextSibling)
         {
-            var node = xml.ChildNodes.Item(i);
-            if (node is null || node.NodeType is XmlNodeType.XmlDeclaration)
+            if (node.NodeType is XmlNodeType.XmlDeclaration)
             {
                 continue;
             }
@@ -204,7 +205,7 @@ public class Formatter
                         }
 
                         _lastNodeType = XmlNodeType.Document;
-                        PrintNode(documentElement, ref sb);
+                        PrintNode(documentElement, ref sb, previousSibling);
                         if (node.NextSibling != null)
                         {
                             sb.Append(Environment.NewLine);
@@ -213,7 +214,7 @@ public class Formatter
                         break;
                     }
                 case XmlNodeType.Comment:
-                    PrintNode(node, ref sb);
+                    PrintNode(node, ref sb, previousSibling);
                     sb.Append(Environment.NewLine);
                     break;
                 case XmlNodeType.None:
@@ -232,14 +233,17 @@ public class Formatter
                 case XmlNodeType.EndEntity:
                 case XmlNodeType.XmlDeclaration:
                 default:
-                    PrintNode(node, ref sb);
+                    PrintNode(node, ref sb, previousSibling);
                     break;
             }
         }
         return sb.ToString();
     }
 
-    private void PrintNode(XmlNode node, ref StringBuilder sb)
+    /// <param name="previousSibling">
+    /// The node before <paramref name="node"/> under the same parent, or null when it is first.
+    /// </param>
+    private void PrintNode(XmlNode node, ref StringBuilder sb, XmlNode? previousSibling)
     {
         var prevNode = _lastNodeType;
         _lastNodeType = node.NodeType;
@@ -260,12 +264,8 @@ public class Formatter
                 var shouldIndent = true;
                 if (_currentOptions.PreserveCommentPlacement)
                 {
-                    shouldIndent = node is
-                    {
-                        PreviousSibling: not null,
-                        PreviousSibling.Value: not null,
-                        PreviousSibling.NodeType: XmlNodeType.Whitespace
-                    } && node.PreviousSibling.Value.Contains('\n');
+                    shouldIndent = previousSibling is { NodeType: XmlNodeType.Whitespace, Value: not null }
+                                   && previousSibling.Value.Contains('\n');
                 }
                 if (shouldIndent && node.ParentNode?.NodeType is XmlNodeType.Document)
                 {
@@ -357,7 +357,7 @@ public class Formatter
                  * Only emit whitespace that is actual element content (no element siblings),
                  * not structural indentation between siblings (which is regenerated). See #209.
                  */
-                var hasElementSibling = node.PreviousSibling is { NodeType: XmlNodeType.Element }
+                var hasElementSibling = previousSibling is { NodeType: XmlNodeType.Element }
                                         || node.NextSibling is { NodeType: XmlNodeType.Element };
 
                 if (hasElementSibling)
@@ -491,11 +491,23 @@ public class Formatter
 
             var childCount = _currentOptions.AddEmptyLineBetweenElements ? node.ChildNodes.Count : 0;
 
-            for (var currentChild = node.FirstChild; currentChild is not null; currentChild = currentChild.NextSibling)
+            /*
+             * The previous sibling is carried along rather than read from the node: XmlLinkedNode
+             * has no back-pointer, so PreviousSibling rescans the parent's children from
+             * FirstChild on every access. That is O(k) per child - O(k^2) per parent - and
+             * PreserveNewLines pays it twice over, because the retained whitespace nodes roughly
+             * double k. The loop already knows the answer for free. See #37 for the sibling
+             * rewrite that fixed the same shape of bug in this loop's indexing.
+             */
+            XmlNode? previousChild = null;
+
+            for (var currentChild = node.FirstChild;
+                 currentChild is not null;
+                 previousChild = currentChild, currentChild = currentChild.NextSibling)
             {
                 var commentNoNewLine = currentChild.NodeType is XmlNodeType.Comment
                                        && _currentOptions.PreserveCommentPlacement
-                                       && currentChild.PreviousSibling?.NodeType is XmlNodeType.Element or XmlNodeType.Whitespace;
+                                       && previousChild?.NodeType is XmlNodeType.Element or XmlNodeType.Whitespace;
                 if (currentChild.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA
                                          or XmlNodeType.EntityReference
                                          or XmlNodeType.SignificantWhitespace
@@ -505,7 +517,7 @@ public class Formatter
                 {
                     sb.Append(Environment.NewLine);
                 }
-                PrintNode(currentChild, ref sb);
+                PrintNode(currentChild, ref sb, previousChild);
 
                 if (_currentOptions.AddEmptyLineBetweenElements
                     && currentChild.NodeType is XmlNodeType.Element

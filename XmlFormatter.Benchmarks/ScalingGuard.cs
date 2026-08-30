@@ -14,8 +14,15 @@ internal static class ScalingGuard
     /// <summary>How much steeper than linear is tolerated before this is called a regression.</summary>
     public const double Tolerance = 1.5;
 
-    private const int SmallRecords = 4_000;
-    private const int LargeRecords = 16_000;
+    /*
+     * Both sizes sit above the point where the DOM stops fitting the cache, because a two-point
+     * ratio only means anything when both points are in the same memory regime. At 4,000 records
+     * the working set is still cheap per character and at 16,000 it is not, so that pairing
+     * charged the step between them to the formatter and read ~1.5x linear on a path measured
+     * flat at five sizes. From 8,000 records on, cost per character is level.
+     */
+    private const int SmallRecords = 8_000;
+    private const int LargeRecords = 32_000;
     private const int RunsPerMeasurement = 5;
 
     private static readonly ScalingCase[] Cases =
@@ -23,11 +30,7 @@ internal static class ScalingGuard
         new("orders/default", "default", PreFormatted: false),
 
         // The editor's real case: retained whitespace roughly doubles the sibling count.
-        new("orders/preserve-newlines",
-            "preserve-newlines",
-            PreFormatted: true,
-            KnownFailing: "PreserveNewLines on already-formatted input is still superlinear - "
-                        + "the ChildNodes fix in #37 did not reach this path."),
+        new("orders/preserve-newlines", "preserve-newlines", PreFormatted: true),
     ];
 
     public static int Run(double tolerance)

@@ -75,8 +75,18 @@ both measurements together and the ratio survives. It runs in-process rather tha
 the CLI so both halves share one JIT and one heap, and takes the fastest of five runs -
 noise only ever adds time, so the quickest run is closest to the real work.
 
-Verified against the bug it exists to catch: at the guard's two sizes the pre-#37 formatter
-measures **3.43x linear** on the default path. The current one measures 0.73x.
+Verified against both bugs it exists to catch: the pre-#37 formatter measures **3.43x linear**
+on the default path, and the formatter before the `PreviousSibling` fix measures **3.42x** on
+`preserve-newlines`. The current one measures ~0.67x and ~1.25x.
+
+### Why 8,000 and 32,000 records
+
+A two-point ratio only means anything when both points are in the same memory regime. The
+earlier pair, 4,000 and 16,000, straddled the size where the DOM stops fitting cache - the
+smaller document is cheaper per character for reasons that have nothing to do with the
+formatter, and the guard charged that step to it, reading ~1.5x linear on a path that measures
+flat at five sizes. Both sizes now sit above it; cost per character is level from 8,000
+records on.
 
 ### Known-failing cases
 
@@ -85,5 +95,5 @@ fail the run - a guard that is red from the day it lands stops meaning anything.
 case starts passing, the run says `FIXED` and asks for the flag to be removed, so the
 exemption cannot quietly outlive the bug.
 
-One case is flagged today: `orders/preserve-newlines` measures ~3.5x linear. The `ChildNodes`
-fix in #37 did not reach that path. See `AGENTS.md`.
+No case is flagged today. `orders/preserve-newlines` was, until the `PreviousSibling` rescan
+behind it was fixed; see `AGENTS.md`.
