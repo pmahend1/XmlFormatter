@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <catalog>
     <book id="bk101">
         <author>Gambardella, Matthew</author>
@@ -11,7 +11,7 @@
 
         <publish_date>2000-10-01</publish_date>
 
-        <description>            
+        <description>
             
             
             An in-depth look at      creating applications
@@ -34,7 +34,7 @@
 
         <publish_date>2000-12-16</publish_date>
 
-        <description>            
+        <description>
             A former architect battles corporate zombies,
             an evil sorceress, and her own childhood to become queen
             of the world.
@@ -53,7 +53,7 @@
 
         <publish_date>2000-11-17</publish_date>
 
-        <description>            
+        <description>
             After the collapse of a nanotechnology
             society in England, the young survivors lay the
             foundation for a new society.
@@ -72,7 +72,7 @@
 
         <publish_date>2001-03-10</publish_date>
 
-        <description>            
+        <description>
             In post-apocalypse England, the mysterious
             agent known only as Oberon helps to create a new life
             for the inhabitants of London. Sequel to Maeve
@@ -111,7 +111,7 @@
 
         <publish_date>2000-09-02</publish_date>
 
-        <description>            
+        <description>
             When Carla meets Paul at an ornithology
             conference, tempers fly as feathers get ruffled.
             
@@ -167,7 +167,7 @@
 
         <publish_date>2000-11-02</publish_date>
 
-        <description>            
+        <description>
             After an inadvertant trip through a Heisenberg
             Uncertainty Device, James Salway discovers the problems
             of being quantum.
@@ -186,7 +186,7 @@
 
         <publish_date>2000-12-09</publish_date>
 
-        <description>            
+        <description>
             Microsoft's .NET initiative is explored in
             detail in this deep programmer's reference.
         </description>
@@ -204,7 +204,7 @@
 
         <publish_date>2000-12-01</publish_date>
 
-        <description>            
+        <description>
             The Microsoft MSXML3 parser is covered in
             detail, with attention to XML DOM interfaces, XSLT processing,
             SAX and more.
@@ -223,7 +223,7 @@
 
         <publish_date>2001-04-16</publish_date>
 
-        <description>            
+        <description>
             Microsoft Visual Studio 7 is explored in depth,
             looking at how Visual Basic, Visual C++, C#, and ASP+ are
             integrated into a comprehensive development

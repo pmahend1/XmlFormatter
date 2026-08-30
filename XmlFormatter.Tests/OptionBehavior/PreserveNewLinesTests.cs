@@ -25,6 +25,40 @@ public class PreserveNewLinesTests
     }
 
     [Fact]
+    public void True_keeps_a_sole_cdata_child_inline()
+    {
+        var formatted = TestFormatter.Format("<r><![CDATA[x]]></r>", Preserving);
+
+        Assert.Equal("<r><![CDATA[x]]></r>", formatted);
+    }
+
+    [Fact]
+    public void True_indents_a_sole_element_child_normally()
+    {
+        // The sole-child path is the whitespace one; an element there is still laid out.
+        var formatted = TestFormatter.Format("<r><a/></r>", Preserving);
+
+        Assert.Equal("<r>\n    <a />\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_keeps_whitespace_that_spans_lines_as_the_only_content()
+    {
+        var formatted = TestFormatter.Format("<r>\n  </r>", Preserving);
+
+        Assert.Equal("<r>\n  </r>", formatted);
+    }
+
+    [Fact]
+    public void True_collapses_a_run_of_newlines_in_whitespace_only_content()
+    {
+        // Blank lines are AddEmptyLineBetweenElements' job, not this option's.
+        var formatted = TestFormatter.Format("<r>\n\n\n</r>", Preserving);
+
+        Assert.Equal("<r>\n</r>", formatted);
+    }
+
+    [Fact]
     public void True_still_regenerates_indentation_between_elements()
     {
         // The blank lines in the input are structural, and structural whitespace is rebuilt.
@@ -49,40 +83,25 @@ public class PreserveNewLinesTests
     }
 
     [Fact]
-    public void True_should_not_emit_the_indentation_that_precedes_a_comment()
+    public void True_does_not_emit_the_indentation_that_precedes_a_comment()
     {
-        KnownFailure.Expect("PreserveNewLines emits structural whitespace as content when the node next "
-                          + "to it is a comment rather than an element. The `hasElementSibling` guard in "
-                          + "PrintNode only looks for Element siblings, so the indent before a comment is "
-                          + "written out and then indented again - producing a line of trailing spaces "
-                          + "and a stray blank line.",
-                            () =>
-                            {
-                                var formatted = TestFormatter.Format("<r>\n  <!--why-->\n  <a/>\n</r>", Preserving);
+        var formatted = TestFormatter.Format("<r>\n  <!--why-->\n  <a/>\n</r>", Preserving);
 
-                                Assert.Equal("""
-                                    <r>
-                                        <!-- why -->
-                                        <a />
-                                    </r>
-                                    """, formatted);
-                            });
+        Assert.Equal("""
+            <r>
+                <!-- why -->
+                <a />
+            </r>
+            """, formatted);
     }
 
     [Fact]
-    public void True_should_not_leave_a_blank_line_after_a_trailing_comment()
+    public void True_does_not_leave_a_blank_line_after_a_trailing_comment()
     {
-        KnownFailure.Expect("Same cause as the comment-indentation failure above: the whitespace after a "
-                          + "trailing comment has no element sibling either, so it is emitted as content "
-                          + "and the close tag adds its own newline on top, leaving a blank line before "
-                          + "</r>.",
-                            () =>
-                            {
-                                var options = Preserving with { PreserveCommentPlacement = true };
+        var options = Preserving with { PreserveCommentPlacement = true };
 
-                                var formatted = TestFormatter.Format("<r>\n  <a/> <!--why-->\n</r>", options);
+        var formatted = TestFormatter.Format("<r>\n  <a/> <!--why-->\n</r>", options);
 
-                                Assert.Equal("<r>\n    <a /><!-- why -->\n</r>", formatted);
-                            });
+        Assert.Equal("<r>\n    <a /><!-- why -->\n</r>", formatted);
     }
 }

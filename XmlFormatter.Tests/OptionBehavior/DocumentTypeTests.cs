@@ -1,3 +1,5 @@
+using System.Xml;
+
 namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
@@ -31,33 +33,23 @@ public class DocumentTypeTests
     }
 
     [Fact]
-    public void A_system_identifier_should_keep_its_keyword()
+    public void A_system_identifier_keeps_its_keyword()
     {
-        KnownFailure.Expect("The SYSTEM keyword is dropped. FormatXMLDocument writes the public id with "
-                          + "its keyword but the system id bare, which is correct only when a public id "
-                          + "is present - PUBLIC takes two literals. With no public id the output is "
-                          + "`<!DOCTYPE root \"my.dtd\">`, which no parser will read back. Filed under the "
-                          + "documented DTD limitation rather than the roadmap, so this exemption is "
-                          + "expected to stand. If it is ever picked up, emit SYSTEM when PublicId is null.",
-                            () =>
-                            {
-                                var formatted = TestFormatter.Format("""<!DOCTYPE root SYSTEM "my.dtd"><root/>""",
-                                                                     TestOptions.NoDeclaration);
+        var formatted = TestFormatter.Format("""<!DOCTYPE root SYSTEM "my.dtd"><root/>""",
+                                             TestOptions.NoDeclaration);
 
-                                Assert.Equal("""
-                                    <!DOCTYPE root SYSTEM "my.dtd">
-                                    <root />
-                                    """, formatted);
-                            });
+        Assert.Equal("""
+            <!DOCTYPE root SYSTEM "my.dtd">
+            <root />
+            """, formatted);
     }
 
     [Fact]
-    public void The_output_of_a_system_identifier_does_not_parse()
+    public void The_output_of_a_system_identifier_parses()
     {
-        // Asserts the *broken* behavior deliberately: this is why the known failure matters,
-        // and it fails when the fix lands, which is the reminder to delete it.
+        // The point of the keyword: without it the formatter could not read its own output back.
         var formatted = TestFormatter.Format("""<!DOCTYPE root SYSTEM "my.dtd"><root/>""", TestOptions.NoDeclaration);
 
-        Assert.Throws<System.Xml.XmlException>(() => new System.Xml.XmlDocument().LoadXml(formatted));
+        new XmlDocument().LoadXml(formatted);
     }
 }

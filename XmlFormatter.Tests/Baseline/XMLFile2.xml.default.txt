@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <catalog>
     <book id="bk101">
         <author>Gambardella, Matthew</author>
@@ -6,7 +6,7 @@
         <genre>Computer</genre>
         <price>44.95</price>
         <publish_date>2000-10-01</publish_date>
-        <description>            
+        <description>
             
             
             An in-depth look at      creating applications
@@ -22,7 +22,7 @@
         <genre>Fantasy</genre>
         <price>5.95</price>
         <publish_date>2000-12-16</publish_date>
-        <description>            
+        <description>
             A former architect battles corporate zombies,
             an evil sorceress, and her own childhood to become queen
             of the world.
@@ -34,7 +34,7 @@
         <genre>Fantasy</genre>
         <price>5.95</price>
         <publish_date>2000-11-17</publish_date>
-        <description>            
+        <description>
             After the collapse of a nanotechnology
             society in England, the young survivors lay the
             foundation for a new society.
@@ -46,7 +46,7 @@
         <genre>Fantasy</genre>
         <price>5.95</price>
         <publish_date>2001-03-10</publish_date>
-        <description>            
+        <description>
             In post-apocalypse England, the mysterious
             agent known only as Oberon helps to create a new life
             for the inhabitants of London. Sequel to Maeve
@@ -71,7 +71,7 @@
         <genre>Romance</genre>
         <price>4.95</price>
         <publish_date>2000-09-02</publish_date>
-        <description>            
+        <description>
             When Carla meets Paul at an ornithology
             conference, tempers fly as feathers get ruffled.
             
@@ -106,7 +106,7 @@
         <genre>Science Fiction</genre>
         <price>6.95</price>
         <publish_date>2000-11-02</publish_date>
-        <description>            
+        <description>
             After an inadvertant trip through a Heisenberg
             Uncertainty Device, James Salway discovers the problems
             of being quantum.
@@ -118,7 +118,7 @@
         <genre>Computer</genre>
         <price>36.95</price>
         <publish_date>2000-12-09</publish_date>
-        <description>            
+        <description>
             Microsoft's .NET initiative is explored in
             detail in this deep programmer's reference.
         </description>
@@ -129,7 +129,7 @@
         <genre>Computer</genre>
         <price>36.95</price>
         <publish_date>2000-12-01</publish_date>
-        <description>            
+        <description>
             The Microsoft MSXML3 parser is covered in
             detail, with attention to XML DOM interfaces, XSLT processing,
             SAX and more.
@@ -141,7 +141,7 @@
         <genre>Computer</genre>
         <price>49.95</price>
         <publish_date>2001-04-16</publish_date>
-        <description>            
+        <description>
             Microsoft Visual Studio 7 is explored in depth,
             looking at how Visual Basic, Visual C++, C#, and ASP+ are
             integrated into a comprehensive development

@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-
 <!DOCTYPE Items [<!ENTITY number "123">]>
 <Items>
     <Item>Test with an entity: &number;</Item>

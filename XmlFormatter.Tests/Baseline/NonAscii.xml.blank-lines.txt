@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!-- Non-ASCII corpus: the Sample/ fixtures were ASCII-only, which is why #216 shipped. -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 version="2.0">
@@ -24,7 +23,6 @@
         <literal><![CDATA[café — not escaped]]></literal>
 
         <!-- Umlauts in a comment: äöü -->
-    
     </xsl:template>
 
 </xsl:stylesheet>
