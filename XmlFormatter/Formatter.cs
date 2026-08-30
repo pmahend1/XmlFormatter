@@ -269,7 +269,7 @@ public class Formatter
 
             if (element.LastWrittenChild is { } lastWrittenChild)
             {
-                WriteBlankLineAfterChild(lastWrittenChild, element.ChildCount, sb);
+                WriteBlankLineAfterChild(lastWrittenChild, sb, element.ChildCount);
             }
 
             if (element.NextChild is not { } child)
@@ -290,7 +290,7 @@ public class Formatter
             element.NextChild = child.NextSibling;
             element.LastWrittenChild = child;
 
-            WriteSeparatorBeforeChild(child, previousChild, sb);
+            WriteSeparatorBeforeChild(child, sb, previousChild);
 
             if (WriteNode(child, sb, previousChild) is { } childElement)
             {
@@ -593,7 +593,7 @@ public class Formatter
     /// Writes the line break that separates <paramref name="child"/> from what precedes it,
     /// where the node types on either side call for one.
     /// </summary>
-    private void WriteSeparatorBeforeChild(XmlNode child, XmlNode? previousChild, StringBuilder sb)
+    private void WriteSeparatorBeforeChild(XmlNode child, StringBuilder sb, XmlNode? previousChild)
     {
         var commentNoNewLine = child.NodeType is XmlNodeType.Comment
                                && _currentOptions.PreserveCommentPlacement
@@ -614,7 +614,7 @@ public class Formatter
     /// Applies <see cref="Options.AddEmptyLineBetweenElements"/> to the child whose subtree has
     /// just been written.
     /// </summary>
-    private void WriteBlankLineAfterChild(XmlNode child, int childCount, StringBuilder sb)
+    private void WriteBlankLineAfterChild(XmlNode child, StringBuilder sb, int childCount)
     {
         if (_currentOptions.AddEmptyLineBetweenElements
             && child.NodeType is XmlNodeType.Element
