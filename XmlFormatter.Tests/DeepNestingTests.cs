@@ -60,6 +60,22 @@ public class DeepNestingTests
         Assert.Equal(50_000, CountOccurrences(formatted, "</level>"));
     }
 
+    /// <summary>
+    /// PreserveCommentPlacement walks the whole document once before the traversal does, to read
+    /// the comment placements out of whitespace that is then stepped over rather than deleted.
+    /// That walk has a stack of its own to keep, and the same depth to keep it over.
+    /// </summary>
+    [Fact]
+    public void Deep_nesting_survives_preserve_comment_placement_too()
+    {
+        var xml = SyntheticXml.Chain(depth: 50_000);
+
+        var formatted = TestFormatter.Format(xml,
+                                             TestOptions.NoDeclaration with { IndentLength = 0, PreserveCommentPlacement = true });
+
+        Assert.Equal(50_000, CountOccurrences(formatted, "</level>"));
+    }
+
     /// <summary>Minimize goes through the DOM writer rather than the traversal, and always could.</summary>
     [Fact]
     public void Minimize_handles_the_same_depth()

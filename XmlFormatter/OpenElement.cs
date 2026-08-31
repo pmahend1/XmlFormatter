@@ -7,7 +7,7 @@ namespace XmlFormatter;
 /// written and whose children are still being walked. This is what used to be a recursive
 /// call frame, so nesting depth now costs heap instead of stack.
 /// </summary>
-internal sealed class OpenElement(XmlNode node, int childCount)
+internal sealed class OpenElement(XmlNode node, XmlNode? firstChild, int childCount)
 {
     public XmlNode Node { get; } = node;
 
@@ -18,7 +18,7 @@ internal sealed class OpenElement(XmlNode node, int childCount)
     public int ChildCount { get; } = childCount;
 
     /// <summary>The child to write next, or null once the children are exhausted.</summary>
-    public XmlNode? NextChild { get; set; } = node.FirstChild;
+    public XmlNode? NextChild { get; set; } = firstChild;
 
     /// <summary>
     /// The child visited most recently, or null before the first one. It answers two questions
