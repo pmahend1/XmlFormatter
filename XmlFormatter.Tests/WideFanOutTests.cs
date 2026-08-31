@@ -44,6 +44,22 @@ public class WideFanOutTests
     }
 
     /// <summary>
+    /// The generator emits no whitespace between nodes, so PreserveNewLines has none to keep and
+    /// the two option sets differ in nothing but how they reach the comment placements. 5000
+    /// comments is also where a placement pass that scanned backwards would show up as a stall.
+    /// </summary>
+    [Fact]
+    public void Preserve_comment_placement_reaches_the_same_output_without_preserve_new_lines()
+    {
+        var xml = SyntheticXml.Orders(Records);
+        var withNewLines = OptionSets.ByName("sample-program");
+
+        var formatted = new Formatter().Format(xml, withNewLines with { PreserveNewLines = false });
+
+        Assert.Equal(new Formatter().Format(xml, withNewLines), formatted);
+    }
+
+    /// <summary>
     /// Hashed with LF endings. The formatter emits Environment.NewLine, and these hashes were
     /// recorded on a platform that means LF by that, so hashing raw output would fail every
     /// case on Windows for a reason that has nothing to do with sibling traversal.

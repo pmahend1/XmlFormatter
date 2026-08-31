@@ -23,6 +23,12 @@ public partial class Formatter
 
     private Options _currentOptions = new();
 
+    /// <summary>
+    /// Comments that began a line in the source. Populated only when the whitespace saying so is
+    /// about to be stepped over, and so cannot be read off the node itself.
+    /// </summary>
+    private HashSet<XmlNode> _ownLineComments = [];
+
     private static readonly XmlWriterSettings MinimizeSettings = new()
     {
         Indent = false,
@@ -96,14 +102,127 @@ public partial class Formatter
         return sb.ToString();
     }
 
-    private static XmlDocument ConvertToXmlDocument(string input, bool preserveNewLines = false)
+    private static XmlDocument ConvertToXmlDocument(string input, bool preserveWhitespace = false)
     {
         XmlDocument xml = new()
         {
-            PreserveWhitespace = preserveNewLines
+            PreserveWhitespace = preserveWhitespace
         };
         xml.LoadXml(input);
         return xml;
+    }
+
+    /// <summary>
+    /// Records every comment that began a line of its own, reading the whitespace nodes that say
+    /// so before <see cref="SkipCommentEvidence"/> makes the rest of the run blind to them.
+    /// </summary>
+    private static HashSet<XmlNode> IndexOwnLineComments(XmlDocument xml)
+    {
+        // XmlNode has no value equality and identity is what is meant here, so say so.
+        var ownLineComments = new HashSet<XmlNode>(ReferenceEqualityComparer.Instance);
+
+        // An explicit stack for the same reason PrintNode has one: recursion overflows on depth.
+        var parents = new Stack<XmlNode>();
+        parents.Push(xml);
+
+        while (parents.Count > 0)
+        {
+            var parent = parents.Pop();
+            XmlNode? previous = null;
+
+            for (var child = parent.FirstChild; child is not null; previous = child, child = child.NextSibling)
+            {
+                if (child.NodeType is XmlNodeType.Comment
+                    && previous is { NodeType: XmlNodeType.Whitespace, Value: not null }
+                    && previous.Value.Contains('\n'))
+                {
+                    ownLineComments.Add(child);
+                }
+
+                if (child.HasChildNodes)
+                {
+                    parents.Push(child);
+                }
+            }
+        }
+
+        return ownLineComments;
+    }
+
+    /// <summary>
+    /// Whether the DOM holds whitespace nodes that nothing but
+    /// <see cref="Options.PreserveCommentPlacement"/> asked for.
+    /// </summary>
+    private bool WhitespaceIsCommentEvidenceOnly => _currentOptions.PreserveCommentPlacement
+                                                    && _currentOptions.PreserveNewLines is false;
+
+    /// <summary>
+    /// The first child of <paramref name="node"/> the rest of this run can see.
+    /// </summary>
+    private XmlNode? FirstVisibleChild(XmlNode node)
+    {
+        return SkipCommentEvidence(node.FirstChild);
+    }
+
+    /// <summary>
+    /// The sibling after <paramref name="node"/> the rest of this run can see.
+    /// </summary>
+    private XmlNode? NextVisibleSibling(XmlNode node)
+    {
+        return SkipCommentEvidence(node.NextSibling);
+    }
+
+    /// <summary>
+    /// Steps over whitespace loaded only to place comments, so that every other rule sees the
+    /// DOM it would have seen had that whitespace never been read.
+    /// </summary>
+    /// <remarks>
+    /// Deleting the nodes instead would be simpler to reason about and quadratic to do:
+    /// <see cref="XmlNode.RemoveChild"/> relinks through <c>PreviousSibling</c>, which rescans
+    /// the parent from its first child (see #46). Adjacent whitespace is one node, so a step
+    /// here passes over at most one, and no node is passed over twice.
+    /// </remarks>
+    private XmlNode? SkipCommentEvidence(XmlNode? node)
+    {
+        while (WhitespaceIsCommentEvidenceOnly && node is { NodeType: XmlNodeType.Whitespace })
+        {
+            node = node.NextSibling;
+        }
+
+        return node;
+    }
+
+    /// <summary>Number of children of <paramref name="node"/> that this run will write.</summary>
+    private int VisibleChildCount(XmlNode node)
+    {
+        var count = 0;
+
+        for (var child = FirstVisibleChild(node); child is not null; child = NextVisibleSibling(child))
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="comment"/> began a line of its own in the source, and so should
+    /// begin one here. Only meaningful under <see cref="Options.PreserveCommentPlacement"/>.
+    /// </summary>
+    /// <param name="previousSibling">
+    /// The node before <paramref name="comment"/> under the same parent, or null when it is first.
+    /// </param>
+    private bool StartsItsOwnLine(XmlNode comment, XmlNode? previousSibling)
+    {
+        /*
+         * One answer, two places to read it from. Under PreserveNewLines the whitespace is part
+         * of the walk, so the sibling threaded down it answers this for free; otherwise the walk
+         * steps over that whitespace and the answer was taken at load instead.
+         */
+        return _currentOptions.PreserveNewLines ?
+               previousSibling is { NodeType: XmlNodeType.Whitespace, Value: not null }
+               && previousSibling.Value.Contains('\n') :
+               _ownLineComments.Contains(comment);
     }
 
     public string Format(string input, Options? formattingOptions = null)
@@ -117,7 +236,18 @@ public partial class Formatter
                                   formattingOptions.Value with { AllowSingleQuoteInAttributeValue = false } :
                                   formattingOptions.Value;
             }
-            var xmlDocument = ConvertToXmlDocument(input: input, preserveNewLines: _currentOptions.PreserveNewLines);
+            /*
+             * Where a comment sat is only readable from the whitespace around it, and
+             * PreserveNewLines is what normally keeps that whitespace. Load it for either option
+             * and read the placements out of it up front; the walk then steps over what it was
+             * not asked to preserve. Without this the option had no evidence to work from, took
+             * every comment for a trailing one, and failed silently rather than being ignored.
+             */
+            var xmlDocument = ConvertToXmlDocument(input: input,
+                                                   preserveWhitespace: _currentOptions.PreserveNewLines
+                                                                       || _currentOptions.PreserveCommentPlacement);
+
+            _ownLineComments = WhitespaceIsCommentEvidenceOnly ? IndexOwnLineComments(xmlDocument) : [];
             var formattedXml = FormatXmlDocument(xmlDocument);
             return formattedXml;
         }
@@ -163,7 +293,7 @@ public partial class Formatter
 
         XmlNode? previousSibling = null;
 
-        for (var node = xml.FirstChild; node is not null; previousSibling = node, node = node.NextSibling)
+        for (var node = FirstVisibleChild(xml); node is not null; previousSibling = node, node = NextVisibleSibling(node))
         {
             if (node.NodeType is XmlNodeType.XmlDeclaration)
             {
@@ -229,7 +359,7 @@ public partial class Formatter
 
                         _lastNodeType = XmlNodeType.Document;
                         PrintNode(documentElement, sb, previousSibling);
-                        if (node.NextSibling != null)
+                        if (NextVisibleSibling(node) is not null)
                         {
                             sb.Append(Environment.NewLine);
                         }
@@ -310,7 +440,7 @@ public partial class Formatter
              */
             var previousChild = element.LastWrittenChild;
 
-            element.NextChild = child.NextSibling;
+            element.NextChild = NextVisibleSibling(child);
             element.LastWrittenChild = child;
 
             WriteSeparatorBeforeChild(child, sb, previousChild);
@@ -344,6 +474,9 @@ public partial class Formatter
         var space = prevNode is not XmlNodeType.Text ? new string(' ', _currentStartLength) : string.Empty;
 
         sb.Append(space).Append($"<{node.Name}");
+
+        var firstChild = FirstVisibleChild(node);
+        var hasChildren = firstChild is not null;
 
         // Default is null
         var wildCardPatterns = _currentOptions.WildCardedExceptionsForPositionAllAttributesOnFirstLine ?? [];
@@ -405,7 +538,7 @@ public partial class Formatter
                     }
                 }
                 //start tag end if last tag
-                else if (node.HasChildNodes)
+                else if (hasChildren)
                 {
                     sb.Append('>');
                 }
@@ -416,7 +549,7 @@ public partial class Formatter
         else
         {
             //start tag end if no attributes
-            if (node.HasChildNodes)
+            if (hasChildren)
             {
                 sb.Append('>');
             }
@@ -424,7 +557,7 @@ public partial class Formatter
         }
 
         //if no children end tag
-        if (node.HasChildNodes is false)
+        if (hasChildren is false)
         {
             #region NoChildEndTag
 
@@ -449,10 +582,10 @@ public partial class Formatter
          * line per format on <r>\n  </r>.
          */
         var firstChildIsInlineContent =
-            node.FirstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
+            firstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
             || (_currentOptions.PreserveNewLines
-                && node.FirstChild == node.LastChild
-                && node.FirstChild is { NodeType: XmlNodeType.Whitespace });
+                && firstChild == node.LastChild
+                && firstChild is { NodeType: XmlNodeType.Whitespace });
 
         if (firstChildIsInlineContent is false)
         {
@@ -460,7 +593,8 @@ public partial class Formatter
         }
 
         return new OpenElement(node,
-                               childCount: _currentOptions.AddEmptyLineBetweenElements ? node.ChildNodes.Count : 0);
+                               firstChild: firstChild,
+                               childCount: _currentOptions.AddEmptyLineBetweenElements ? VisibleChildCount(node) : 0);
     }
 
     /// <summary>
@@ -486,19 +620,18 @@ public partial class Formatter
                 return true;
 
             case XmlNodeType.Comment:
-                var shouldIndent = true;
-                if (_currentOptions.PreserveCommentPlacement)
-                {
-                    shouldIndent = previousSibling is { NodeType: XmlNodeType.Whitespace, Value: not null }
-                                   && previousSibling.Value.Contains('\n');
-                }
-                if (shouldIndent && node.ParentNode?.NodeType is XmlNodeType.Document)
+                /*
+                 * Off, every comment is repositioned onto its own line; on, only the ones that
+                 * already had one. Either way the line break itself comes from the separator, so
+                 * this decides the indent alone - see WriteSeparatorBeforeChild.
+                 */
+                var shouldIndent = _currentOptions.PreserveCommentPlacement is false
+                                   || StartsItsOwnLine(node, previousSibling);
+
+                // Nothing at document level is nested, so nothing there is indented.
+                if (node.ParentNode?.NodeType is XmlNodeType.Document)
                 {
                     shouldIndent = false;
-                }
-                if (shouldIndent && _currentOptions.PreserveCommentPlacement)
-                {
-                    sb.AppendLine();
                 }
                 var indent = shouldIndent ? new string(' ', _currentStartLength) : string.Empty;
                 string commentText;
@@ -635,16 +768,22 @@ public partial class Formatter
     /// </summary>
     private void WriteSeparatorBeforeChild(XmlNode child, StringBuilder sb, XmlNode? previousChild)
     {
-        var commentNoNewLine = child.NodeType is XmlNodeType.Comment
-                               && _currentOptions.PreserveCommentPlacement
-                               && previousChild?.NodeType is XmlNodeType.Element or XmlNodeType.Whitespace;
+        /*
+         * A comment that shared a line with what came before it keeps doing so - that is the
+         * whole of PreserveCommentPlacement, and the previous node type is no way to tell: a
+         * comment first under its parent, or after text or another comment, shared the line too
+         * and used to be broken onto a new one with no indent, against the left margin.
+         */
+        var commentKeepsItsLine = child.NodeType is XmlNodeType.Comment
+                                  && _currentOptions.PreserveCommentPlacement
+                                  && StartsItsOwnLine(child, previousChild) is false;
 
         if (child.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA
                                  or XmlNodeType.EntityReference
                                  or XmlNodeType.SignificantWhitespace
                                  or XmlNodeType.Whitespace)
             && _lastNodeType is not XmlNodeType.Text
-            && commentNoNewLine is false)
+            && commentKeepsItsLine is false)
         {
             sb.Append(Environment.NewLine);
         }
@@ -656,11 +795,13 @@ public partial class Formatter
     /// </summary>
     private void WriteBlankLineAfterChild(XmlNode child, StringBuilder sb, int childCount)
     {
+        var nextSibling = NextVisibleSibling(child);
+
         if (_currentOptions.AddEmptyLineBetweenElements
             && child.NodeType is XmlNodeType.Element
-            && child.NextSibling?.NodeType is not (XmlNodeType.Text or XmlNodeType.SignificantWhitespace)
+            && nextSibling?.NodeType is not (XmlNodeType.Text or XmlNodeType.SignificantWhitespace)
             && childCount > 2
-            && child.NextSibling is not null)
+            && nextSibling is not null)
         {
             sb.AppendLine();
         }
