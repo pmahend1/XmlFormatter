@@ -52,9 +52,9 @@ public partial class Formatter
 
     /// <summary>
     /// Single-pass XML attribute value escaper. Encodes &amp; &lt; &gt; and whichever quote
-    /// delimits the value; with <paramref name="escapeWhitespace"/>, also encodes tab, newline
-    /// and carriage return as hex character references. Everything else is written as itself.
-    /// O(n), no string scans.
+    /// delimits the value, plus the apostrophe when <paramref name="escapeApostrophe"/> asks;
+    /// with <paramref name="escapeWhitespace"/>, also encodes tab, newline and carriage return as
+    /// hex character references. Everything else is written as itself. O(n), no string scans.
     /// </summary>
     /// <param name="value">input</param>
     /// <param name="escapeWhitespace">
@@ -63,7 +63,15 @@ public partial class Formatter
     /// those three survive a round-trip only as character references.
     /// </param>
     /// <param name="useSingleQuotes">flag to use single quotes</param>
-    private static string EscapeXmlValue(string value, bool escapeWhitespace, bool useSingleQuotes)
+    /// <param name="escapeApostrophe">
+    /// Escape an apostrophe the delimiter leaves legal - the double-quoted case of
+    /// <see cref="Options.AllowSingleQuoteInAttributeValue"/> turned off. Under single quotes the
+    /// apostrophe is the delimiter and is escaped either way.
+    /// </param>
+    private static string EscapeXmlValue(string value,
+                                         bool escapeWhitespace,
+                                         bool useSingleQuotes,
+                                         bool escapeApostrophe)
     {
         var sb = new StringBuilder(value.Length);
         foreach (var c in value)
@@ -82,7 +90,7 @@ public partial class Formatter
                 case '"' when !useSingleQuotes:
                     sb.Append("&quot;");
                     break;
-                case '\'' when useSingleQuotes:
+                case '\'' when useSingleQuotes || escapeApostrophe:
                     sb.Append("&apos;");
                     break;
                 default:
@@ -521,12 +529,9 @@ public partial class Formatter
 
                 var attributeValue = EscapeXmlValue(attribute.Value,
                                                     escapeWhitespace: _currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
-                                                    useSingleQuotes: _currentOptions.UseSingleQuotes);
+                                                    useSingleQuotes: _currentOptions.UseSingleQuotes,
+                                                    escapeApostrophe: _currentOptions.AllowSingleQuoteInAttributeValue is false);
 
-                if (_currentOptions.AllowSingleQuoteInAttributeValue && attributeValue.Contains("&apos;"))
-                {
-                    attributeValue = attributeValue.Replace("&apos;", "'");
-                }
                 sb.Append($"{attribute.Name}{(_currentOptions.UseSingleQuotes ? "='" : "=\"")}{attributeValue}{(_currentOptions.UseSingleQuotes ? '\'' : "\"")}{newLineOrSpace}");
 
                 //continue

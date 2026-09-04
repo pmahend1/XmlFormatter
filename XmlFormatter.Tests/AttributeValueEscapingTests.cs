@@ -1,7 +1,9 @@
 namespace XmlFormatter.Tests;
 
 /// <summary>
-/// Only the delimiter in use is escaped; the other is legal literal and reads better.
+/// Only the delimiter in use is escaped; the other is legal literal and reads better. The
+/// apostrophe is the exception - AllowSingleQuoteInAttributeValue can ask for it escaped under
+/// double quotes, which AllowSingleQuoteInAttributeValueTests covers.
 /// </summary>
 public class AttributeValueEscapingTests
 {
@@ -59,9 +61,8 @@ public class AttributeValueEscapingTests
     [Fact]
     public void An_apostrophe_is_left_literal_inside_a_double_quoted_value()
     {
-        // The fifth character, and the only one whose handling is in question:
-        // AllowSingleQuoteInAttributeValue is supposed to control this and cannot.
-        // AllowSingleQuoteInAttributeValueTests carries the known failure.
+        // The fifth character, and the only one an option speaks for:
+        // AllowSingleQuoteInAttributeValue = false escapes it here instead.
         var formatted = TestFormatter.Format("""<r a="it's"/>""", TestOptions.NoDeclaration);
 
         Assert.Equal("""<r a="it's" />""", formatted);

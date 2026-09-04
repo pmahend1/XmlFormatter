@@ -1,8 +1,8 @@
 namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
-/// Ignored under UseSingleQuotes by documented contract. Under double quotes the escaper
-/// never emits &amp;apos;, so the option has no reachable effect at all.
+/// Ignored under UseSingleQuotes by documented contract. Under double quotes, where an
+/// apostrophe is legal either way, it decides whether one is written literally or as &amp;apos;.
 /// </summary>
 public class AllowSingleQuoteInAttributeValueTests
 {
@@ -17,20 +17,34 @@ public class AllowSingleQuoteInAttributeValueTests
     }
 
     [Fact]
-    public void False_should_escape_the_apostrophe_under_double_quotes()
+    public void False_escapes_the_apostrophe_under_double_quotes()
     {
-        KnownFailure.Expect("AllowSingleQuoteInAttributeValue = false is inert under double quotes, which "
-                          + "is the only configuration where it is not documented as ignored. EscapeXmlValue "
-                          + "escapes just the delimiter in use, so it never produces the &apos; that this "
-                          + "option's replacement looks for, and the setting has no reachable effect at all.",
-                            () =>
-                            {
-                                var options = TestOptions.NoDeclaration with { AllowSingleQuoteInAttributeValue = false };
+        var options = TestOptions.NoDeclaration with { AllowSingleQuoteInAttributeValue = false };
 
-                                var formatted = TestFormatter.Format(Apostrophe, options);
+        var formatted = TestFormatter.Format(Apostrophe, options);
 
-                                Assert.Equal("""<r a="it&apos;s" />""", formatted);
-                            });
+        Assert.Equal("""<r a="it&apos;s" />""", formatted);
+    }
+
+    [Fact]
+    public void False_escapes_every_apostrophe_in_the_value()
+    {
+        // The example the extension documents for this setting, unchecked.
+        var options = TestOptions.NoDeclaration with { AllowSingleQuoteInAttributeValue = false };
+
+        var formatted = TestFormatter.Format("""<r a="Value'has'apostrophes"/>""", options);
+
+        Assert.Equal("""<r a="Value&apos;has&apos;apostrophes" />""", formatted);
+    }
+
+    [Fact]
+    public void False_leaves_the_double_quote_escape_alone()
+    {
+        var options = TestOptions.NoDeclaration with { AllowSingleQuoteInAttributeValue = false };
+
+        var formatted = TestFormatter.Format("""<r a='say "hi" to it&apos;s'/>""", options);
+
+        Assert.Equal("""<r a="say &quot;hi&quot; to it&apos;s" />""", formatted);
     }
 
     [Fact]
