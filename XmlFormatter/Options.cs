@@ -18,7 +18,38 @@ public record struct Options()
 
     public bool AddSpaceBeforeSelfClosingTag { get; init; } = true;
     public bool WrapCommentTextWithSpaces { get; init; } = true;
+
+    /// <summary>
+    /// Write a tab, newline or carriage return inside an attribute value as a hex character
+    /// reference rather than as itself. On by default because those three do not survive a
+    /// round-trip otherwise: XML attribute-value normalization (XML 1.0 section 3.3.3) replaces
+    /// each of them with a space when the document is read back.
+    ///
+    /// All three are ASCII, so this option and <see cref="EscapeInvisibleNonAsciiCharacters"/>
+    /// never decide the same character - see the note there.
+    /// </summary>
     public bool AllowWhiteSpaceUnicodesInAttributeValues { get; init; } = true;
+
+    /// <summary>
+    /// Write the non-ASCII characters that draw nothing - NBSP, the zero-width spaces, the bidi
+    /// and other format controls - as hex character references, in text content and in attribute
+    /// values. Visible non-ASCII is never touched: an umlaut, a CJK ideograph and an emoji stay
+    /// literal whichever way this is set.
+    ///
+    /// Off by default, which is the v2.3.1 output. It exists because an invisible character is
+    /// indistinguishable from a plain space on screen, so an editor can lose one to a stray
+    /// keystroke with nothing to show for it.
+    ///
+    /// <b>This is not a superset of <see cref="AllowWhiteSpaceUnicodesInAttributeValues"/>, and
+    /// deliberately does not defer to it.</b> Tab, newline and carriage return are invisible too,
+    /// and they belong to that option alone; this one starts above ASCII. So the two can look
+    /// like they contradict each other - turn this on with that one off and an attribute holding
+    /// both comes out with a literal tab next to an escaped NBSP - and they do not. They are
+    /// about different characters for different reasons: that option is about surviving
+    /// attribute-value normalization, this one is about being able to see what is there.
+    /// </summary>
+    public bool EscapeInvisibleNonAsciiCharacters { get; init; } = false;
+
     public bool PositionFirstAttributeOnSameLine { get; init; } = true;
     public bool PreserveWhiteSpacesInComment { get; init; } = false;
     public bool PositionAllAttributesOnFirstLine { get; init; } = false;
@@ -44,6 +75,7 @@ public record struct Options()
                AddSpaceBeforeSelfClosingTag == other.AddSpaceBeforeSelfClosingTag &&
                WrapCommentTextWithSpaces == other.WrapCommentTextWithSpaces &&
                AllowWhiteSpaceUnicodesInAttributeValues == other.AllowWhiteSpaceUnicodesInAttributeValues &&
+               EscapeInvisibleNonAsciiCharacters == other.EscapeInvisibleNonAsciiCharacters &&
                PositionFirstAttributeOnSameLine == other.PositionFirstAttributeOnSameLine &&
                PreserveWhiteSpacesInComment == other.PreserveWhiteSpacesInComment &&
                PositionAllAttributesOnFirstLine == other.PositionAllAttributesOnFirstLine &&
@@ -67,6 +99,7 @@ public record struct Options()
         hash.Add(AddSpaceBeforeSelfClosingTag);
         hash.Add(WrapCommentTextWithSpaces);
         hash.Add(AllowWhiteSpaceUnicodesInAttributeValues);
+        hash.Add(EscapeInvisibleNonAsciiCharacters);
         hash.Add(PositionFirstAttributeOnSameLine);
         hash.Add(PreserveWhiteSpacesInComment);
         hash.Add(PositionAllAttributesOnFirstLine);

@@ -13,6 +13,12 @@ namespace XmlFormatter.Tests.OptionBehavior;
 /// which is what broke umlauts in #216; TextContentEncodingTests carries the rest of that
 /// regression cover.
 ///
+/// Non-printable non-ASCII - NBSP and the zero-width characters - is not this option's either,
+/// even though it is invisible in exactly the way tab and newline are. That belongs to
+/// EscapeInvisibleNonAsciiCharacters, which starts above ASCII where this one stops. The two
+/// look like they overlap and do not; EscapeInvisibleNonAsciiCharactersTests runs all four
+/// combinations of them over one attribute holding both a tab and an NBSP.
+///
 /// The whitespace inputs here are written as character references so the source XML says
 /// exactly which codepoint it means, and the non-ASCII ones as \u escapes so normalizing the
 /// file cannot silently change what is under test.

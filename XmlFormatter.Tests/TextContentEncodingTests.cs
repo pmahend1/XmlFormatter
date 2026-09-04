@@ -2,11 +2,16 @@ namespace XmlFormatter.Tests;
 
 /// <summary>
 /// Text content is written straight from OuterXml, which the DOM has already escaped
-/// correctly. Nothing re-encodes it afterward.
+/// correctly. Under default options nothing re-encodes it afterward.
 ///
 /// Regression cover for #216: a pass that rewrote every non-ASCII codepoint in text as a hex
 /// character reference turned every umlaut in an XSLT stylesheet into &amp;#xFC;. The output
 /// parsed back to the same document, so it was well-formed - and unreadable.
+///
+/// One option does re-encode text, and only the part of it that draws nothing:
+/// EscapeInvisibleNonAsciiCharacters, off by default and covered in OptionBehavior. Nothing here
+/// is invisible, so every one of these documents comes out the same at either setting - which is
+/// the option's whole claim, and why that class re-asserts the umlaut and the emoji with it on.
 ///
 /// The non-ASCII characters here are written as \u escapes rather than typed, so normalizing
 /// the file cannot silently change what is under test.

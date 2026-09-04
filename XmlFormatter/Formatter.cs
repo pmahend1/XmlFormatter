@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -53,8 +54,9 @@ public partial class Formatter
     /// <summary>
     /// Single-pass XML attribute value escaper. Encodes &amp; &lt; &gt; and whichever quote
     /// delimits the value, plus the apostrophe when <paramref name="escapeApostrophe"/> asks;
-    /// with <paramref name="escapeWhitespace"/>, also encodes tab, newline and carriage return as
-    /// hex character references. Everything else is written as itself. O(n), no string scans.
+    /// with <paramref name="escapeWhitespace"/>, also encodes tab, newline and carriage return,
+    /// and with <paramref name="escapeInvisibleNonAscii"/> the invisible characters above ASCII.
+    /// Everything else is written as itself. O(n), no string scans.
     /// </summary>
     /// <param name="value">input</param>
     /// <param name="escapeWhitespace">
@@ -68,14 +70,21 @@ public partial class Formatter
     /// <see cref="Options.AllowSingleQuoteInAttributeValue"/> turned off. Under single quotes the
     /// apostrophe is the delimiter and is escaped either way.
     /// </param>
+    /// <param name="escapeInvisibleNonAscii">
+    /// <see cref="Options.EscapeInvisibleNonAsciiCharacters"/>. It starts above ASCII, so it and
+    /// <paramref name="escapeWhitespace"/> never decide the same character and the order of the
+    /// two tests below carries no meaning.
+    /// </param>
     private static string EscapeXmlValue(string value,
                                          bool escapeWhitespace,
                                          bool useSingleQuotes,
-                                         bool escapeApostrophe)
+                                         bool escapeApostrophe,
+                                         bool escapeInvisibleNonAscii)
     {
         var sb = new StringBuilder(value.Length);
-        foreach (var c in value)
+        for (var i = 0; i < value.Length; i++)
         {
+            var c = value[i];
             switch (c)
             {
                 case '&':
@@ -96,9 +105,13 @@ public partial class Formatter
                 default:
                     if (escapeWhitespace && c is '\t' or '\n' or '\r')
                     {
-                        sb.Append("&#x");
-                        sb.Append(((int)c).ToString("X"));
-                        sb.Append(';');
+                        AppendCharacterReference(sb, c);
+                    }
+                    else if (escapeInvisibleNonAscii
+                             && TryReadInvisibleNonAscii(value, i, out var codePoint, out var length))
+                    {
+                        AppendCharacterReference(sb, codePoint);
+                        i += length - 1;
                     }
                     else
                     {
@@ -108,6 +121,96 @@ public partial class Formatter
             }
         }
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Rewrites the invisible characters above ASCII in an already-escaped string - a text node's
+    /// <c>OuterXml</c> - as hex character references, leaving everything else alone. The escapes
+    /// the DOM has already written are ASCII, so they pass through untouched, and so does every
+    /// visible non-ASCII character.
+    /// </summary>
+    private static string EscapeInvisibleNonAscii(string xmlEscapedText)
+    {
+        // Nothing above ASCII, nothing this can change - and no allocation. Text is the hot path.
+        if (Ascii.IsValid(xmlEscapedText))
+        {
+            return xmlEscapedText;
+        }
+
+        var sb = new StringBuilder(xmlEscapedText.Length);
+
+        for (var i = 0; i < xmlEscapedText.Length; i++)
+        {
+            if (TryReadInvisibleNonAscii(xmlEscapedText, i, out var codePoint, out var length))
+            {
+                AppendCharacterReference(sb, codePoint);
+                i += length - 1;
+            }
+            else
+            {
+                sb.Append(xmlEscapedText[i]);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Whether the character at <paramref name="index"/> is one of those
+    /// <see cref="Options.EscapeInvisibleNonAsciiCharacters"/> covers, and if so which codepoint
+    /// it is.
+    /// </summary>
+    /// <param name="codePoint">
+    /// The whole codepoint, a surrogate pair read as the one character it encodes rather than as
+    /// two halves that would each be spelled as a reference no parser can put back together.
+    /// </param>
+    /// <param name="length">
+    /// How many chars the codepoint occupies. Meaningful only when this returns true - a visible
+    /// astral character is left to be copied one char at a time, which needs no length.
+    /// </param>
+    private static bool TryReadInvisibleNonAscii(string value, int index, out int codePoint, out int length)
+    {
+        codePoint = value[index];
+        length = 1;
+
+        /*
+         * Tab, newline and carriage return are invisible too and are not read here: they are
+         * AllowWhiteSpaceUnicodesInAttributeValues' to decide, and escaping them in text would
+         * rewrite the line breaks of every document. See the note on Options.
+         */
+        if (codePoint < 0x80)
+        {
+            return false;
+        }
+
+        if (char.IsHighSurrogate(value[index])
+            && index + 1 < value.Length
+            && char.IsLowSurrogate(value[index + 1]))
+        {
+            codePoint = char.ConvertToUtf32(value[index], value[index + 1]);
+            length = 2;
+        }
+
+        /*
+         * "Invisible" as Unicode itself defines it, rather than as a list of the characters that
+         * have been complained about: the separators (NBSP and the rest of Zs, plus Zl and Zp),
+         * the format characters (zero-width spaces, joiners, bidi marks, the BOM, soft hyphen),
+         * and the C1 controls. A combining mark is not here - it draws an accent, and the letter
+         * it is attached to would be wrong without it.
+         */
+        return CharUnicodeInfo.GetUnicodeCategory(codePoint) is UnicodeCategory.SpaceSeparator
+                                                             or UnicodeCategory.LineSeparator
+                                                             or UnicodeCategory.ParagraphSeparator
+                                                             or UnicodeCategory.Format
+                                                             or UnicodeCategory.Control;
+    }
+
+    /// <summary>Appends the hex character reference a parser reads back as that codepoint.</summary>
+    private static void AppendCharacterReference(StringBuilder sb, int codePoint)
+    {
+        sb.Append("&#x")
+          .Append(codePoint.ToString("X"))
+          .Append(';');
     }
 
     private static XmlDocument ConvertToXmlDocument(string input, bool preserveWhitespace = false)
@@ -530,7 +633,8 @@ public partial class Formatter
                 var attributeValue = EscapeXmlValue(attribute.Value,
                                                     escapeWhitespace: _currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
                                                     useSingleQuotes: _currentOptions.UseSingleQuotes,
-                                                    escapeApostrophe: _currentOptions.AllowSingleQuoteInAttributeValue is false);
+                                                    escapeApostrophe: _currentOptions.AllowSingleQuoteInAttributeValue is false,
+                                                    escapeInvisibleNonAscii: _currentOptions.EscapeInvisibleNonAsciiCharacters);
 
                 sb.Append($"{attribute.Name}{(_currentOptions.UseSingleQuotes ? "='" : "=\"")}{attributeValue}{(_currentOptions.UseSingleQuotes ? '\'' : "\"")}{newLineOrSpace}");
 
@@ -674,18 +778,28 @@ public partial class Formatter
 
 
             case XmlNodeType.Text:
+                /*
+                 * OuterXml is already escaped correctly by the DOM, so the only pass over it is
+                 * the invisible-character one, and only when it was asked for. CDATA and comments
+                 * get no such pass on purpose: neither resolves character references, so writing
+                 * one into either replaces the character with six literal characters that say its
+                 * name. Text and attribute values are the only places a reference means anything.
+                 */
+                var text = _currentOptions.EscapeInvisibleNonAsciiCharacters ?
+                           EscapeInvisibleNonAscii(node.OuterXml) :
+                           node.OuterXml;
+
                 if ((node.ParentNode?.ParentNode is XmlElement element &&
                     element.HasAttribute("xml:space") &&
-                    element.GetAttribute("xml:space") is "preserve") || node.OuterXml.Contains('\n') is false)
+                    element.GetAttribute("xml:space") is "preserve") || text.Contains('\n') is false)
                 {
-                    sb.Append(node.OuterXml);
+                    sb.Append(text);
                 }
                 else
                 {
                     // LF, not Environment.NewLine: parsing normalizes every line ending in text
                     // to LF (XML 1.0 2.11), so the DOM never holds CRLF. Searching for the
                     // platform newline skipped this branch on Windows and emitted raw text.
-                    var text = node.OuterXml;
                     var lines = text.Split('\n');
                     for (var i = 0; i < lines.Length; i++)
                     {
