@@ -7,7 +7,15 @@ public record struct Options()
     public int IndentLength { get; init; } = 4;
     public bool UseSelfClosingTags { get; init; } = true;
     public bool UseSingleQuotes { get; init; } = false;
+
+    /// <summary>
+    /// Write an apostrophe in an attribute value as itself rather than as &amp;apos;. Ignored
+    /// under <see cref="UseSingleQuotes"/>, where the apostrophe delimits the value and a
+    /// literal one would close it early - the only reading of this option that stays
+    /// well-formed is the double-quoted one.
+    /// </summary>
     public bool AllowSingleQuoteInAttributeValue { get; init; } = true;
+
     public bool AddSpaceBeforeSelfClosingTag { get; init; } = true;
     public bool WrapCommentTextWithSpaces { get; init; } = true;
     public bool AllowWhiteSpaceUnicodesInAttributeValues { get; init; } = true;
