@@ -49,10 +49,8 @@ public class IdempotencyTests
         Assert.Empty(unparseable);
     }
 
-    /*
-     * The three causes, each on the smallest document that shows it. The fixture sweep above
-     * catches a regression; these say which one it was.
-     */
+    // The causes, each on the smallest document that shows it. The fixture sweep above catches
+    // a regression; these say which one it was.
 
     [Fact]
     public void A_generated_declaration_is_written_as_it_will_be_read_back()
@@ -88,6 +86,42 @@ public class IdempotencyTests
         var once = TestFormatter.Format("<r>\n  </r>", options);
 
         Assert.Equal(once, TestFormatter.Format(once, options));
+    }
+
+    /// <summary>
+    /// After text the separator opens no line, so the indent landed in the text node's own
+    /// character data and came back as text on the next pass - one space beside a comment
+    /// widened by IndentLength on every format, without ever settling.
+    /// </summary>
+    [Fact]
+    public void A_comment_beside_text_gains_no_indent_inside_the_text()
+    {
+        const string mixed = "<r><p>a <!-- c --> b</p></r>";
+
+        var once = TestFormatter.Format(mixed, TestOptions.NoDeclaration);
+        var twice = TestFormatter.Format(once, TestOptions.NoDeclaration);
+
+        Assert.Equal("<r>\n    <p>a <!-- c --> b</p>\n</r>", once);
+        Assert.Equal(once, twice);
+    }
+
+    [Theory]
+    // The comment last in the element, so nothing follows it to show the drift.
+    [InlineData("<r><p>a <!-- c --></p></r>")]
+    // Two of them, which widened independently and so grew twice as fast.
+    [InlineData("<r><p>a <!--x--> b <!--y--> c</p></r>")]
+    // An element before the comment still opens a line for it - this one must keep its indent.
+    [InlineData("<r><p><a/><!-- c --> b</p></r>")]
+    public void A_comment_in_mixed_content_settles_after_one_pass(string mixed)
+    {
+        foreach (var options in new[] { TestOptions.NoDeclaration,
+                                        TestOptions.NoDeclaration with { PreserveNewLines = true },
+                                        TestOptions.NoDeclaration with { PreserveCommentPlacement = true } })
+        {
+            var once = TestFormatter.Format(mixed, options);
+
+            Assert.Equal(once, TestFormatter.Format(once, options));
+        }
     }
 
     private static bool SecondFormatThrows(string fixture)
