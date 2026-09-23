@@ -734,8 +734,10 @@ public partial class Formatter
                  * already had one. Either way the line break itself comes from the separator, so
                  * this decides the indent alone - see WriteSeparatorBeforeChild.
                  */
-                var shouldIndent = _currentOptions.PreserveCommentPlacement is false
-                                   || StartsItsOwnLine(node, previousSibling);
+                var separatorOpenedALine = prevNode is not XmlNodeType.Text;
+                var shouldIndent = (_currentOptions.PreserveCommentPlacement is false
+                                    || StartsItsOwnLine(node, previousSibling))
+                                   && separatorOpenedALine;
 
                 // Nothing at document level is nested, so nothing there is indented.
                 if (node.ParentNode?.NodeType is XmlNodeType.Document)
