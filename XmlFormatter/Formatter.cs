@@ -22,6 +22,12 @@ public partial class Formatter
 
     private XmlNodeType _lastNodeType;
 
+    /// <summary>
+    /// Structural line breaks written so far - see <see cref="AppendLineBreak"/>. Read only
+    /// through <see cref="ContentHasStartedALine"/>.
+    /// </summary>
+    private int _lineBreaks;
+
     private Options _currentOptions = new();
 
     /// <summary>
@@ -520,7 +526,7 @@ public partial class Formatter
          */
         var openElements = new Stack<OpenElement>();
 
-        var rootElement = WriteNode(node, sb, previousSibling);
+        var rootElement = WriteNode(node, sb, previousSibling, lineBreakFollows: false);
         if (rootElement is null)
         {
             return;
@@ -538,7 +544,7 @@ public partial class Formatter
 
             if (element.NextChild is not { } child)
             {
-                WriteClosingTag(element.Node, sb);
+                WriteClosingTag(element, sb);
                 openElements.Pop();
                 continue;
             }
@@ -556,7 +562,9 @@ public partial class Formatter
 
             WriteSeparatorBeforeChild(child, sb, previousChild);
 
-            if (WriteNode(child, sb, previousChild) is { } childElement)
+            var lineBreakFollows = element.NextChild is null && ContentHasStartedALine(element);
+
+            if (WriteNode(child, sb, previousChild, lineBreakFollows) is { } childElement)
             {
                 openElements.Push(childElement);
             }
@@ -571,12 +579,17 @@ public partial class Formatter
     /// The stack entry to descend into when <paramref name="node"/> has children left to write,
     /// or <see langword="null"/> when the node has been written in full.
     /// </returns>
-    private OpenElement? WriteNode(XmlNode node, StringBuilder sb, XmlNode? previousSibling)
+    /// <param name="lineBreakFollows">
+    /// Whether a new line starts immediately after this node - true only for the last child of an
+    /// element laid out as a block. Text that knows this drops its trailing whitespace, which the
+    /// break would otherwise absorb into the text node on the next format.
+    /// </param>
+    private OpenElement? WriteNode(XmlNode node, StringBuilder sb, XmlNode? previousSibling, bool lineBreakFollows)
     {
         var prevNode = _lastNodeType;
         _lastNodeType = node.NodeType;
 
-        if (TryWriteLeafNode(node, sb, prevNode, previousSibling))
+        if (TryWriteLeafNode(node, sb, prevNode, previousSibling, lineBreakFollows))
         {
             return null;
         }
@@ -614,7 +627,7 @@ public partial class Formatter
                 }
                 else
                 {
-                    sb.AppendLine();
+                    AppendLineBreak(sb);
                     _currentAttributeSpace = _currentStartLength + _currentOptions.IndentLength;
                     sb.Append(new string(' ', _currentAttributeSpace));
                 }
@@ -643,6 +656,8 @@ public partial class Formatter
                 {
                     if (shouldAttributesSeparatedBySpace is false && isThresholdApplicable is false)
                     {
+                        // newLineOrSpace above was a line break, and it counts like any other.
+                        _lineBreaks++;
                         sb.Append(new string(' ', _currentAttributeSpace));
                     }
                 }
@@ -684,26 +699,14 @@ public partial class Formatter
             return null;
         }
 
-        /*
-         * Treat inline whitespace content like Text for indentation (see #209). Whitespace that
-         * is the sole child counts whether or not it spans lines: it is written as content, so
-         * the element must not also be indented around it - that double count is what grew a
-         * line per format on <r>\n  </r>.
-         */
-        var firstChildIsInlineContent =
-            firstChild is { NodeType: XmlNodeType.Text or XmlNodeType.CDATA }
-            || (_currentOptions.PreserveNewLines
-                && firstChild == node.LastChild
-                && firstChild is { NodeType: XmlNodeType.Whitespace });
-
-        if (firstChildIsInlineContent is false)
-        {
-            _currentStartLength += _currentOptions.IndentLength;
-        }
+        // Paired with the decrement in WriteClosingTag: this tracks nesting alone. Whether an end
+        // tag gets a line of its own is a separate question, answered from _lineBreaks.
+        _currentStartLength += _currentOptions.IndentLength;
 
         return new OpenElement(node,
                                firstChild: firstChild,
-                               childCount: _currentOptions.AddEmptyLineBetweenElements ? VisibleChildCount(node) : 0);
+                               childCount: _currentOptions.AddEmptyLineBetweenElements ? VisibleChildCount(node) : 0,
+                               lineBreaksAtContentStart: _lineBreaks);
     }
 
     /// <summary>
@@ -714,18 +717,21 @@ public partial class Formatter
     /// <see langword="true"/> when the node was written in full, <see langword="false"/> when it
     /// still needs a start tag.
     /// </returns>
-    private bool TryWriteLeafNode(XmlNode node, StringBuilder sb, XmlNodeType prevNode, XmlNode? previousSibling)
+    private bool TryWriteLeafNode(XmlNode node, StringBuilder sb, XmlNodeType prevNode, XmlNode? previousSibling, bool lineBreakFollows)
     {
         switch (node.NodeType)
         {
             case XmlNodeType.CDATA:
-                var newLine = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : Environment.NewLine;
-                var spaces = prevNode is XmlNodeType.Text or XmlNodeType.Element ? string.Empty : new string(' ', _currentStartLength);
+                var startsItsOwnLine = prevNode is not (XmlNodeType.Text or XmlNodeType.Element);
                 Debug.WriteLine($"CDATA value: {node.Value}");
 
-                sb.Append(newLine)
-                  .Append(spaces)
-                  .Append($"<![CDATA[{node.Value}]]>");
+                if (startsItsOwnLine)
+                {
+                    AppendLineBreak(sb);
+                    sb.Append(new string(' ', _currentStartLength));
+                }
+
+                sb.Append($"<![CDATA[{node.Value}]]>");
                 return true;
 
             case XmlNodeType.Comment:
@@ -775,7 +781,8 @@ public partial class Formatter
                 return true;
 
             case XmlNodeType.ProcessingInstruction:
-                sb.AppendLine($"<?{node.Name} {node.Value}?>");
+                sb.Append($"<?{node.Name} {node.Value}?>");
+                AppendLineBreak(sb);
                 return true;
 
 
@@ -791,6 +798,11 @@ public partial class Formatter
                            EscapeInvisibleNonAscii(node.OuterXml) :
                            node.OuterXml;
 
+                if (lineBreakFollows)
+                {
+                    text = text.TrimEnd(' ', '\t', '\r', '\n');
+                }
+
                 if ((node.ParentNode?.ParentNode is XmlElement element &&
                     element.HasAttribute("xml:space") &&
                     element.GetAttribute("xml:space") is "preserve") || text.Contains('\n') is false)
@@ -803,6 +815,7 @@ public partial class Formatter
                     // to LF (XML 1.0 2.11), so the DOM never holds CRLF. Searching for the
                     // platform newline skipped this branch on Windows and emitted raw text.
                     var lines = text.Split('\n');
+                    var wroteALine = false;
                     for (var i = 0; i < lines.Length; i++)
                     {
                         var line = lines[i];
@@ -817,18 +830,23 @@ public partial class Formatter
                             continue;
                         }
 
-                        if (i == lines.Length - 1)
+                        if (i == lines.Length - 1 && string.IsNullOrEmpty(line.Trim()))
                         {
-                            if (string.IsNullOrEmpty(line.Trim()) is false)
-                            {
-                                sb.Append($"{Environment.NewLine}{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
-                            }
-                            sb.Append($"{Environment.NewLine}{new string(' ', _currentStartLength)}");
+                            // The break this line asks for is written again by whatever comes
+                            // next - the separator, or the closing tag's own line.
+                            continue;
                         }
-                        else
-                        {
-                            sb.Append($"{Environment.NewLine}{new string(' ', _currentOptions.IndentLength + _currentStartLength)}{line.Trim()}");
-                        }
+
+                        AppendLineBreak(sb);
+                        sb.Append(new string(' ', _currentStartLength)).Append(line.Trim());
+                        wroteALine = true;
+                    }
+
+                    // The reflow leaves the last line open, and EndElement is free to mean exactly
+                    // that here: the DOM never hands one to this walk.
+                    if (wroteALine)
+                    {
+                        _lastNodeType = XmlNodeType.EndElement;
                     }
                 }
 
@@ -884,6 +902,23 @@ public partial class Formatter
     }
 
     /// <summary>
+    /// Appends a line break the formatter is responsible for and counts it. A break that is part
+    /// of the document's own character data does not come through here and is not counted.
+    /// </summary>
+    private void AppendLineBreak(StringBuilder sb)
+    {
+        sb.Append(Environment.NewLine);
+        _lineBreaks++;
+    }
+
+    /// <summary>
+    /// Whether anything written inside <paramref name="element"/> has started a line of its own,
+    /// which is what separates an element laid out as a block from one written whole on a line.
+    /// </summary>
+    private bool ContentHasStartedALine(OpenElement element) =>
+        _lineBreaks > element.LineBreaksAtContentStart;
+
+    /// <summary>
     /// Writes the line break that separates <paramref name="child"/> from what precedes it,
     /// where the node types on either side call for one.
     /// </summary>
@@ -906,7 +941,7 @@ public partial class Formatter
             && _lastNodeType is not XmlNodeType.Text
             && commentKeepsItsLine is false)
         {
-            sb.Append(Environment.NewLine);
+            AppendLineBreak(sb);
         }
     }
 
@@ -924,13 +959,15 @@ public partial class Formatter
             && childCount > 2
             && nextSibling is not null)
         {
-            sb.AppendLine();
+            AppendLineBreak(sb);
         }
     }
 
     /// <summary>Closes a node whose children have all been written, and unwinds its indent.</summary>
-    private void WriteClosingTag(XmlNode node, StringBuilder sb)
+    private void WriteClosingTag(OpenElement element, StringBuilder sb)
     {
+        var node = element.Node;
+
         if (node.NodeType is XmlNodeType.Comment or
                              XmlNodeType.CDATA or
                              XmlNodeType.DocumentType or
@@ -939,24 +976,21 @@ public partial class Formatter
             return;
         }
 
-        if (_currentStartLength >= _currentOptions.IndentLength &&
-            _lastNodeType is not (XmlNodeType.Text or
-                                  XmlNodeType.CDATA or
-                                  XmlNodeType.DocumentType or
-                                  XmlNodeType.EntityReference))
+        // The pair of the increment in WriteNode, and unconditional for the same reason.
+        if (_currentStartLength >= _currentOptions.IndentLength)
         {
             _currentStartLength -= _currentOptions.IndentLength;
         }
-        var newLine = _lastNodeType is not (XmlNodeType.Text or
-                                            XmlNodeType.CDATA or
-                                            XmlNodeType.EntityReference) ? Environment.NewLine : string.Empty;
 
-        var spaces = _lastNodeType is not (XmlNodeType.Text or
-                                           XmlNodeType.EntityReference or
-                                           XmlNodeType.CDATA) ? new string(' ', _currentStartLength) : string.Empty;
-        sb.Append(newLine)
-            .Append(spaces)
-            .Append($"</{node.Name}>");
+        // An element written whole on one line keeps its end tag on it: breaking <p>a<i /></p>
+        // would push the break into character data the formatter never touched.
+        if (ContentHasStartedALine(element))
+        {
+            AppendLineBreak(sb);
+            sb.Append(new string(' ', _currentStartLength));
+        }
+
+        sb.Append($"</{node.Name}>");
 
         _lastNodeType = node.NodeType;
     }
