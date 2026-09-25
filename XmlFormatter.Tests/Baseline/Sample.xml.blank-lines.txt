@@ -26,7 +26,5 @@ brackets or the greater-than sign using concatenated CDATA sections.
 
         <!-- Comment 2 -->
         <Item>Test with a CDATA section <![CDATA[<456>]]> def</Item>
-
     </StackLayout>
-
 </ContentPage>

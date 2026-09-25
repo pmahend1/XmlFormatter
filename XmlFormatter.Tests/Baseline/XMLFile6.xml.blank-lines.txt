@@ -3,13 +3,11 @@
 <plist version="1.0">
     <dict>
         <key>NSExtension</key>
-
         <dict>
             <key>NSExtensionAttributes</key>
 
             <dict>
                 <key>NSExtensionActivationRule</key>
-
                 <dict>
                     <key>NSExtensionActivationSupportsAttachmentsWithMinCount</key>
 
@@ -18,9 +16,7 @@
                     <key>NSExtensionActivationSupportsFileWithMaxCount</key>
 
                     <integer>1</integer>
-
                 </dict>
-
             </dict>
 
             <key>NSExtensionPrincipalClass</key>
@@ -30,9 +26,6 @@
             <key>NSExtensionPointIdentifier</key>
 
             <string>com.apple.share-services</string>
-
         </dict>
-
     </dict>
-
 </plist>
