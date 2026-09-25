@@ -41,7 +41,7 @@ internal class ConsoleProgram
                     Console.Write(formatter.Format(jsonInputDto.Value.Xml, jsonInputDto.Value.FormattingOptions));
                     break;
                 case FormattingActionKind.Minimize:
-                    Console.Write(formatter.Minimize(jsonInputDto.Value.Xml));
+                    Console.Write(formatter.Minimize(jsonInputDto.Value.Xml, jsonInputDto.Value.FormattingOptions));
                     break;
                 case FormattingActionKind.Unsupported:
                 default:

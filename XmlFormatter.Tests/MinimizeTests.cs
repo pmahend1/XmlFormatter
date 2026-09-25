@@ -2,13 +2,16 @@ namespace XmlFormatter.Tests;
 
 /// <summary>
 /// Minimize is a separate implementation from Format, not a mode of it: XmlWriter does the
-/// writing, and it takes no Options. Where the two disagree is pinned below.
+/// writing, and of the Options only AddXmlDeclarationIfMissing reaches it - the rest describe
+/// formatting, which is what this removes. Where the two disagree is pinned below.
 /// </summary>
 public class MinimizeTests
 {
     private const string Utf8Declaration = """<?xml version="1.0" encoding="utf-8"?>""";
 
     private static string Minimize(string xml) => new Formatter().Minimize(xml);
+
+    private static string Minimize(string xml, Options options) => new Formatter().Minimize(xml, options);
 
     [Fact]
     public void Indentation_and_line_breaks_are_removed()
@@ -19,12 +22,76 @@ public class MinimizeTests
     }
 
     [Fact]
-    public void A_declaration_is_added_even_when_the_input_had_none()
+    public void A_declaration_is_added_by_default_when_the_input_had_none()
     {
-        // Not optional: AddXmlDeclarationIfMissing cannot reach here.
+        // AddXmlDeclarationIfMissing defaults true, and no options means the defaults.
         var minimized = Minimize("<r><a/></r>");
 
         Assert.Equal($"{Utf8Declaration}<r><a /></r>", minimized);
+    }
+
+    [Fact]
+    public void No_declaration_is_added_when_the_option_is_off()
+    {
+        // The option is not Format's alone: the extension documents one exception to it, Format
+        // Selection, and Minimize is not it. Injecting one here invalidates an XML fragment.
+        var minimized = Minimize("<r><a/></r>", TestOptions.NoDeclaration);
+
+        Assert.Equal("<r><a /></r>", minimized);
+    }
+
+    [Fact]
+    public void The_two_actions_agree_about_a_missing_declaration()
+    {
+        // Same input, same options, same answer about whether a declaration belongs there.
+        Assert.DoesNotContain("<?xml", Minimize("<r><a/></r>", TestOptions.NoDeclaration));
+        Assert.DoesNotContain("<?xml", TestFormatter.Format("<r><a/></r>", TestOptions.NoDeclaration));
+    }
+
+    [Fact]
+    public void An_existing_declaration_survives_the_option_being_off()
+    {
+        // The option adds a declaration, it never removes one - exactly as in Format.
+        var minimized = Minimize("""<?xml version="1.0" encoding="utf-16"?><r><a/></r>""", TestOptions.NoDeclaration);
+
+        Assert.Equal("""<?xml version="1.0" encoding="utf-16"?><r><a /></r>""", minimized);
+    }
+
+    [Fact]
+    public void The_option_changes_nothing_for_a_document_that_has_a_declaration()
+    {
+        const string withDeclaration = """<?xml version="1.0" encoding="utf-8"?><r><a/></r>""";
+
+        Assert.Equal(Minimize(withDeclaration, new Options()),
+                     Minimize(withDeclaration, TestOptions.NoDeclaration));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_output_parses_at_either_setting(bool addXmlDeclarationIfMissing)
+    {
+        var options = new Options { AddXmlDeclarationIfMissing = addXmlDeclarationIfMissing };
+        var minimized = Minimize("<r><a x=\"1\"/><!-- note --><b>text</b></r>", options);
+
+        var reloaded = new System.Xml.XmlDocument();
+        reloaded.LoadXml(minimized);
+        Assert.NotNull(reloaded.DocumentElement);
+
+        // And minimizing again is stable: with no declaration written there is none to re-add.
+        Assert.Equal(minimized, Minimize(minimized, options));
+    }
+
+    [Fact]
+    public void A_declaration_without_an_encoding_gains_one_where_Format_leaves_it_alone()
+    {
+        // Characterization, not approval: XmlWriter writes the declaration from its writer's
+        // encoding, so a document that declared none comes back asserting the StringWriter's.
+        Assert.Equal($"{Utf8Declaration}<r />", Minimize("""<?xml version="1.0"?><r/>"""));
+        Assert.Equal("""
+            <?xml version="1.0"?>
+            <r />
+            """, TestFormatter.Format("""<?xml version="1.0"?><r/>""", new Options()));
     }
 
     [Fact]
