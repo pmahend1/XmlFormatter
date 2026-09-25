@@ -48,6 +48,12 @@ public partial class Formatter
         NamespaceHandling = NamespaceHandling.OmitDuplicates,
     };
 
+    /// <summary>
+    /// <see cref="MinimizeSettings"/> with the generated declaration turned off. Cloned rather
+    /// than written out a second time so the two cannot drift apart.
+    /// </summary>
+    private static readonly XmlWriterSettings MinimizeSettingsWithoutDeclaration = CloneWithoutDeclaration(MinimizeSettings);
+
     /// <summary>Runs of one or more line breaks. Built at compile time, not on first use.</summary>
     [GeneratedRegex(@"(\r?\n)+")]
     private static partial Regex NewLineRuns();
@@ -57,6 +63,13 @@ public partial class Formatter
     static Formatter()
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
+    private static XmlWriterSettings CloneWithoutDeclaration(XmlWriterSettings settings)
+    {
+        var withoutDeclaration = settings.Clone();
+        withoutDeclaration.OmitXmlDeclaration = true;
+        return withoutDeclaration;
     }
 
     /// <summary>
@@ -1058,9 +1071,17 @@ public partial class Formatter
         _lastNodeType = node.NodeType;
     }
 
+    /// <summary>
+    /// Strips the formatting from a document, leaving markup and content on one line.
+    /// </summary>
+    /// <param name="formattingOptions">
+    /// Only <see cref="Options.AddXmlDeclarationIfMissing"/> is read - the rest describe
+    /// formatting, which is what this removes. Omitting them takes the defaults, as
+    /// <see cref="Format"/> does.
+    /// </param>
     [SuppressMessage("Performance", "CA1822:Mark members as static")]
     [SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
-    public string Minimize(string xmlString)
+    public string Minimize(string xmlString, Options? formattingOptions = null)
     {
         var xmlDoc = ConvertToXmlDocument(xmlString);
 
@@ -1071,7 +1092,12 @@ public partial class Formatter
             new StringWriterWithEncoding(Encoding.GetEncoding(declaration.Encoding)) :
             new StringWriterWithEncoding();
 
-        using var writer = XmlWriter.Create(stringWriter, MinimizeSettings);
+        // XmlWriter writes its own declaration when the document carries none, so the option
+        // reaches Minimize through the settings. One already there is kept at either setting.
+        var addDeclaration = declaration is not null
+                             || (formattingOptions ?? new Options()).AddXmlDeclarationIfMissing;
+
+        using var writer = XmlWriter.Create(stringWriter, addDeclaration ? MinimizeSettings : MinimizeSettingsWithoutDeclaration);
         xmlDoc.Save(writer);
 
         return stringWriter.ToString();
