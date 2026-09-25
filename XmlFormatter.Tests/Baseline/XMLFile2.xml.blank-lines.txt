@@ -20,7 +20,6 @@
             
             
         </description>
-
     </book>
 
     <book id="bk102">
@@ -39,7 +38,6 @@
             an evil sorceress, and her own childhood to become queen
             of the world.
         </description>
-
     </book>
 
     <book id="bk103">
@@ -58,7 +56,6 @@
             society in England, the young survivors lay the
             foundation for a new society.
         </description>
-
     </book>
 
     <book id="bk104">
@@ -78,7 +75,6 @@
             for the inhabitants of London. Sequel to Maeve
             Ascendant.
         </description>
-
     </book>
 
     <book id="bk105">
@@ -97,7 +93,6 @@
             battle one another for control of England. Sequel to
             Oberon's Legacy.
         </description>
-
     </book>
 
     <book id="bk106">
@@ -117,7 +112,6 @@
             
             
         </description>
-
     </book>
 
     <book id="bk107">
@@ -135,7 +129,6 @@
             A deep sea diver finds true love twenty
             thousand leagues beneath the sea.
         </description>
-
     </book>
 
     <book id="bk108">
@@ -153,7 +146,6 @@
             An anthology of horror stories about roaches,
             centipedes, scorpions  and other insects.
         </description>
-
     </book>
 
     <book id="bk109">
@@ -172,7 +164,6 @@
             Uncertainty Device, James Salway discovers the problems
             of being quantum.
         </description>
-
     </book>
 
     <book id="bk110">
@@ -190,7 +181,6 @@
             Microsoft's .NET initiative is explored in
             detail in this deep programmer's reference.
         </description>
-
     </book>
 
     <book id="bk111">
@@ -209,7 +199,6 @@
             detail, with attention to XML DOM interfaces, XSLT processing,
             SAX and more.
         </description>
-
     </book>
 
     <book id="bk112">
@@ -229,7 +218,5 @@
             integrated into a comprehensive development
             environment.
         </description>
-
     </book>
-
 </catalog>

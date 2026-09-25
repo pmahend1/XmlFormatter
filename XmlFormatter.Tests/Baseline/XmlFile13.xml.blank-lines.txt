@@ -79,7 +79,6 @@
                                             <Tracking event="exitfullscreen">
                                                 <![CDATA[https://plus.sabavision.com/video/b661c43a-91b0-4a26-b24b-2d3d12ed9e33/11037-Z028/sabavision/8230-V947/1c5efe48-d6b8-4244-b1f4-4625da1cd8cd?pageType=<pageType>&domain=filimo.com&sspID=plus.sabavision.com&pid=32554-P136&cid=600534c1-60b7-49a9-8cc0-8fe71f8bff0e&sid=37f58c87-a410-4737-983f-79597b0aa19b&resolution=1920x1080&programType=video&adType=video&time=1703070906&impType=exitfullscreen&sv=NZFRS5KALixLKzXqDwGaUwlZeKpQQ0t_DvP4QG51CbPAdkTxqOT_Tr2aKY_xd5F99y7p2NBLMC091RsD1O5wDQ&cats=FL_Comedy&cats=FL_Drama&cats=FL_Young&cats=FL_Free&adCats=FL_Young&placement=PRE_ROLL]]>
                                             </Tracking>
-
                                         </TrackingEvents>
 
                                         <MediaFiles>
@@ -131,36 +130,22 @@
                                                        height="1080">
                                                 <![CDATA[https://ads.asset.aparat.com/aparat-ads/a88193b3b4c0542a840f5fb828a627f256103992-1080p.mp4]]>
                                             </MediaFile>
-
                                         </MediaFiles>
-
                                     </Linear>
-
                                 </Creative>
-
                                 <Creative>
                                     <CompanionAds />
-
                                 </Creative>
-
                             </Creatives>
 
                             <Description />
 
                             <Survey />
-
                         </InLine>
-
                     </Ad>
-
                 </VAST>
-
             </vmap:VASTAdData>
-
         </vmap:AdSource>
-
         <TrackingEvents />
-
     </vmap:AdBreak>
-
 </vmap:VMAP>

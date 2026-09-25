@@ -324,13 +324,48 @@ public partial class Formatter
         return node;
     }
 
+    /// <summary>
+    /// Whether <paramref name="node"/> is indentation the formatter regenerates rather than
+    /// writes out, and so is a child no other child can see.
+    /// </summary>
+    /// <remarks>
+    /// A sole whitespace child is written as content rather than regenerated, but needs no case
+    /// here: one child reaches neither the "more than 2" threshold nor a following sibling.
+    /// </remarks>
+    private static bool IsStructuralWhitespace(XmlNode node) => node.NodeType is XmlNodeType.Whitespace;
+
+    /// <summary>
+    /// The sibling after <paramref name="node"/> that this run will write, which is the one
+    /// <see cref="Options.AddEmptyLineBetweenElements"/> would put a blank line before.
+    /// </summary>
+    /// <remarks>
+    /// Adjacent whitespace is always one node, so this steps over at most one. Forward only:
+    /// <see cref="XmlLinkedNode.PreviousSibling"/> rescans the parent from its first child (#46).
+    /// </remarks>
+    private XmlNode? NextWrittenSibling(XmlNode node)
+    {
+        var sibling = NextVisibleSibling(node);
+
+        while (sibling is not null && IsStructuralWhitespace(sibling))
+        {
+            sibling = NextVisibleSibling(sibling);
+        }
+
+        return sibling;
+    }
+
     /// <summary>Number of children of <paramref name="node"/> that this run will write.</summary>
-    private int VisibleChildCount(XmlNode node)
+    private int WrittenChildCount(XmlNode node)
     {
         var count = 0;
 
         for (var child = FirstVisibleChild(node); child is not null; child = NextVisibleSibling(child))
         {
+            if (IsStructuralWhitespace(child))
+            {
+                continue;
+            }
+
             count++;
         }
 
@@ -752,7 +787,7 @@ public partial class Formatter
 
         return new OpenElement(node,
                                firstChild: firstChild,
-                               childCount: _currentOptions.AddEmptyLineBetweenElements ? VisibleChildCount(node) : 0,
+                               childCount: _currentOptions.AddEmptyLineBetweenElements ? WrittenChildCount(node) : 0,
                                lineBreaksAtContentStart: _lineBreaks,
                                preservesWhitespace: PreservesWhitespace(node, inherited: inPreservedContent));
     }
@@ -1042,7 +1077,7 @@ public partial class Formatter
     /// </summary>
     private void WriteBlankLineAfterChild(XmlNode child, StringBuilder sb, int childCount)
     {
-        var nextSibling = NextVisibleSibling(child);
+        var nextSibling = NextWrittenSibling(child);
 
         if (_currentOptions.AddEmptyLineBetweenElements
             && child.NodeType is XmlNodeType.Element

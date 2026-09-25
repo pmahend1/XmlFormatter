@@ -24,5 +24,4 @@
 
         <!-- Umlauts in a comment: äöü -->
     </xsl:template>
-
 </xsl:stylesheet>

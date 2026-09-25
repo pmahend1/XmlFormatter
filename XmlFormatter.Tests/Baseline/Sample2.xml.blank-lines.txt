@@ -10,5 +10,4 @@
     <Item>Test with a char entity: A</Item>
 
     <Item>1234567890ABCD</Item>
-
 </Items>
