@@ -7,9 +7,19 @@ namespace XmlFormatter;
 /// written and whose children are still being walked. This is what used to be a recursive
 /// call frame, so nesting depth now costs heap instead of stack.
 /// </summary>
-internal sealed class OpenElement(XmlNode node, XmlNode? firstChild, int childCount, int lineBreaksAtContentStart)
+internal sealed class OpenElement(XmlNode node,
+                                  XmlNode? firstChild,
+                                  int childCount,
+                                  int lineBreaksAtContentStart,
+                                  bool preservesWhitespace)
 {
     public XmlNode Node { get; } = node;
+
+    /// <summary>
+    /// Whether this element's content is under <c>xml:space="preserve"</c>, its own or inherited,
+    /// so nothing may be added to or removed from the whitespace in it.
+    /// </summary>
+    public bool PreservesWhitespace { get; } = preservesWhitespace;
 
     /// <summary>
     /// The formatter's line-break count when this element's content began, which is what

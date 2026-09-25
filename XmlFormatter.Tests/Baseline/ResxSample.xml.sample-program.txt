@@ -90,17 +90,17 @@
     </resheader>
     <data name="123"
           xml:space="preserve">
-        <value>987
+		<value>987
     
     </value>
-        <comment>only</comment>
-    </data>
+		<comment>only</comment>
+	</data>
     <data name="ABC"
           xml:space="preserve">
-        <value>abc</value>
-    </data>
+		<value>abc</value>
+	</data>
     <data name="XYZ"
           xml:space="preserve">
-        <value>xyz</value>
-    </data>
+		<value>xyz</value>
+	</data>
 </root>

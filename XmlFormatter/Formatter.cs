@@ -36,6 +36,8 @@ public partial class Formatter
     /// </summary>
     private HashSet<XmlNode> _ownLineComments = [];
 
+    private const string XmlSpaceAttributeName = "xml:space";
+
     private static readonly XmlWriterSettings MinimizeSettings = new()
     {
         Indent = false,
@@ -342,6 +344,21 @@ public partial class Formatter
                _ownLineComments.Contains(comment);
     }
 
+    /// <summary>
+    /// Whether <paramref name="node"/>'s content preserves whitespace: its own <c>xml:space</c>
+    /// when it carries one, otherwise <paramref name="inherited"/> (XML 1.0 section 2.10).
+    /// </summary>
+    private static bool PreservesWhitespace(XmlNode node, bool inherited)
+    {
+        if (node is not XmlElement element || element.HasAttribute(XmlSpaceAttributeName) is false)
+        {
+            return inherited;
+        }
+
+        // The reader trims the value before validating it but keeps it padded in the DOM.
+        return element.GetAttribute(XmlSpaceAttributeName).Trim() is "preserve";
+    }
+
     public string Format(string input, Options? formattingOptions = null)
     {
         try
@@ -526,7 +543,7 @@ public partial class Formatter
          */
         var openElements = new Stack<OpenElement>();
 
-        var rootElement = WriteNode(node, sb, previousSibling, lineBreakFollows: false);
+        var rootElement = WriteNode(node, sb, previousSibling, lineBreakFollows: false, inPreservedContent: false);
         if (rootElement is null)
         {
             return;
@@ -537,7 +554,7 @@ public partial class Formatter
         {
             var element = openElements.Peek();
 
-            if (element.LastWrittenChild is { } lastWrittenChild)
+            if (element.LastWrittenChild is { } lastWrittenChild && element.PreservesWhitespace is false)
             {
                 WriteBlankLineAfterChild(lastWrittenChild, sb, element.ChildCount);
             }
@@ -560,11 +577,14 @@ public partial class Formatter
             element.NextChild = NextVisibleSibling(child);
             element.LastWrittenChild = child;
 
-            WriteSeparatorBeforeChild(child, sb, previousChild);
+            if (element.PreservesWhitespace is false)
+            {
+                WriteSeparatorBeforeChild(child, sb, previousChild);
+            }
 
             var lineBreakFollows = element.NextChild is null && ContentHasStartedALine(element);
 
-            if (WriteNode(child, sb, previousChild, lineBreakFollows) is { } childElement)
+            if (WriteNode(child, sb, previousChild, lineBreakFollows, element.PreservesWhitespace) is { } childElement)
             {
                 openElements.Push(childElement);
             }
@@ -584,18 +604,30 @@ public partial class Formatter
     /// element laid out as a block. Text that knows this drops its trailing whitespace, which the
     /// break would otherwise absorb into the text node on the next format.
     /// </param>
-    private OpenElement? WriteNode(XmlNode node, StringBuilder sb, XmlNode? previousSibling, bool lineBreakFollows)
+    /// <param name="inPreservedContent">
+    /// Whether <paramref name="node"/> is in content under <c>xml:space="preserve"</c>, where it is
+    /// written with no whitespace added before it and leaves are written as they arrived.
+    /// </param>
+    private OpenElement? WriteNode(XmlNode node,
+                                   StringBuilder sb,
+                                   XmlNode? previousSibling,
+                                   bool lineBreakFollows,
+                                   bool inPreservedContent)
     {
         var prevNode = _lastNodeType;
         _lastNodeType = node.NodeType;
 
-        if (TryWriteLeafNode(node, sb, prevNode, previousSibling, lineBreakFollows))
+        if (inPreservedContent ?
+            TryWriteLeafNodeAsWritten(node, sb) :
+            TryWriteLeafNode(node, sb, prevNode, previousSibling, lineBreakFollows))
         {
             return null;
         }
 
         //print start tag
-        var space = prevNode is not XmlNodeType.Text ? new string(' ', _currentStartLength) : string.Empty;
+        var space = prevNode is not XmlNodeType.Text && inPreservedContent is false ?
+                    new string(' ', _currentStartLength) :
+                    string.Empty;
 
         sb.Append(space).Append($"<{node.Name}");
 
@@ -706,7 +738,40 @@ public partial class Formatter
         return new OpenElement(node,
                                firstChild: firstChild,
                                childCount: _currentOptions.AddEmptyLineBetweenElements ? VisibleChildCount(node) : 0,
-                               lineBreaksAtContentStart: _lineBreaks);
+                               lineBreaksAtContentStart: _lineBreaks,
+                               preservesWhitespace: PreservesWhitespace(node, inherited: inPreservedContent));
+    }
+
+    /// <summary>
+    /// The leaf writer for content under <c>xml:space="preserve"</c>: every leaf exactly as it
+    /// arrived, whitespace-only text included.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> when the node was written in full, <see langword="false"/> when it
+    /// still needs a start tag.
+    /// </returns>
+    private bool TryWriteLeafNodeAsWritten(XmlNode node, StringBuilder sb)
+    {
+        switch (node.NodeType)
+        {
+            case XmlNodeType.Text:
+                sb.Append(_currentOptions.EscapeInvisibleNonAsciiCharacters ?
+                          EscapeInvisibleNonAscii(node.OuterXml) :
+                          node.OuterXml);
+                return true;
+
+            case XmlNodeType.SignificantWhitespace:
+            case XmlNodeType.Whitespace:
+            case XmlNodeType.CDATA:
+            case XmlNodeType.Comment:
+            case XmlNodeType.ProcessingInstruction:
+            case XmlNodeType.EntityReference:
+                sb.Append(node.OuterXml);
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     /// <summary>
@@ -803,9 +868,7 @@ public partial class Formatter
                     text = text.TrimEnd(' ', '\t', '\r', '\n');
                 }
 
-                if ((node.ParentNode?.ParentNode is XmlElement element &&
-                    element.HasAttribute("xml:space") &&
-                    element.GetAttribute("xml:space") is "preserve") || text.Contains('\n') is false)
+                if (text.Contains('\n') is false)
                 {
                     sb.Append(text);
                 }
@@ -984,7 +1047,7 @@ public partial class Formatter
 
         // An element written whole on one line keeps its end tag on it: breaking <p>a<i /></p>
         // would push the break into character data the formatter never touched.
-        if (ContentHasStartedALine(element))
+        if (ContentHasStartedALine(element) && element.PreservesWhitespace is false)
         {
             AppendLineBreak(sb);
             sb.Append(new string(' ', _currentStartLength));
