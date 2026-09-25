@@ -513,9 +513,12 @@ public partial class Formatter
 
                         break;
                     }
+                // Neither writes a break of its own and there is no separator at document level,
+                // so the break before the root element is written here.
                 case XmlNodeType.Comment:
+                case XmlNodeType.ProcessingInstruction:
                     PrintNode(node, sb, previousSibling);
-                    sb.Append(Environment.NewLine);
+                    AppendLineBreak(sb);
                     break;
                 case XmlNodeType.None:
                 case XmlNodeType.Attribute:
@@ -523,7 +526,6 @@ public partial class Formatter
                 case XmlNodeType.CDATA:
                 case XmlNodeType.EntityReference:
                 case XmlNodeType.Entity:
-                case XmlNodeType.ProcessingInstruction:
                 case XmlNodeType.Document:
                 case XmlNodeType.DocumentFragment:
                 case XmlNodeType.Notation:
@@ -859,8 +861,21 @@ public partial class Formatter
                 return true;
 
             case XmlNodeType.ProcessingInstruction:
-                sb.Append($"<?{node.Name} {node.Value}?>");
-                AppendLineBreak(sb);
+                // Indent only; the break comes from the separator, as it does for a comment. Two
+                // positions take none: document level, and after text, where it would land mid-line.
+                var processingInstructionIndent = node.ParentNode?.NodeType is XmlNodeType.Document
+                                                  || prevNode is XmlNodeType.Text ?
+                                                  string.Empty :
+                                                  new string(' ', _currentStartLength);
+
+                // <?target?> is a legal instruction with no data, and the space belongs to the
+                // data rather than to the target - hardcoding it emitted <?target ?>.
+                var processingInstructionData = string.IsNullOrEmpty(node.Value) ?
+                                                string.Empty :
+                                                $" {node.Value}";
+
+                sb.Append(processingInstructionIndent)
+                  .Append($"<?{node.Name}{processingInstructionData}?>");
                 return true;
 
 
