@@ -125,6 +125,16 @@ public class MixedContentIndentationTests
     }
 
     [Theory]
+    [InlineData("<r><p>y z\n\n </p></r>", "<r>\n    <p>\n        y z\n\n    </p>\n</r>")]
+    [InlineData("<r><p>a\n\nb</p></r>", "<r>\n    <p>\n        a\n\n        b\n    </p>\n</r>")]
+    public void A_blank_line_inside_text_is_written_without_indent(string xml, string expected)
+    {
+        var formatted = TestFormatter.Format(xml, TestOptions.NoDeclaration);
+
+        Assert.Equal(expected, formatted);
+    }
+
+    [Theory]
     [InlineData("<r><p>a<i/></p></r>")]
     [InlineData("<r><p>a<i/></p><z/></r>")]
     [InlineData("<r><p><i/>a</p></r>")]

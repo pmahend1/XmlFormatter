@@ -14,7 +14,7 @@ namespace XmlFormatter;
 /// one across threads corrupts output silently. Sequential reuse is fine, including after a
 /// throw. Construction is cheap.
 /// </summary>
-public partial class Formatter
+public class Formatter
 {
     private int _currentAttributeSpace;
 
@@ -53,10 +53,6 @@ public partial class Formatter
     /// than written out a second time so the two cannot drift apart.
     /// </summary>
     private static readonly XmlWriterSettings MinimizeSettingsWithoutDeclaration = CloneWithoutDeclaration(MinimizeSettings);
-
-    /// <summary>Runs of one or more line breaks. Built at compile time, not on first use.</summary>
-    [GeneratedRegex(@"(\r?\n)+")]
-    private static partial Regex NewLineRuns();
 
     // Without this, Minimize throws ArgumentException on windows-1252 and other code pages -
     // .NET Core dropped them from the default provider. No package needed on net10.0.
@@ -964,7 +960,11 @@ public partial class Formatter
                         }
 
                         AppendLineBreak(sb);
-                        sb.Append(new string(' ', _currentStartLength)).Append(line.Trim());
+                        var trimmedLine = line.Trim();
+                        if (trimmedLine is not "")
+                        {
+                            sb.Append(new string(' ', _currentStartLength)).Append(trimmedLine);
+                        }
                         wroteALine = true;
                     }
 
@@ -984,33 +984,18 @@ public partial class Formatter
                 }
 
                 /*
-                 * Only whitespace that is a node's sole content is content; anything with a
-                 * sibling is structural indentation, and the formatter regenerates that. The
-                 * guard used to ask whether a sibling was an *Element*, which let the indent
-                 * around a comment or CDATA through as content on top of the indent generated
-                 * for it - and that emitted indent came back as a whitespace node on the next
-                 * format, so Format(Format(x)) grew a line per pass and never settled.
-                 *
-                 * previousSibling is the threaded parameter, not node.PreviousSibling: reading
-                 * that rescans the parent from FirstChild (#46). See #209 for why any of this
-                 * whitespace is kept at all.
+                 * Whitespace beside a sibling is indentation, which the formatter regenerates. Only
+                 * a sole whitespace child can be content (#209). previousSibling is the threaded
+                 * parameter because node.PreviousSibling rescans the parent (#46).
                  */
                 var hasSibling = previousSibling is not null || node.NextSibling is not null;
 
-                if (hasSibling)
+                if (hasSibling || IsLineBreakBeforeEndTag(node))
                 {
                     return true;
                 }
 
-                /*
-                 * Runs of newlines collapse to one; blank lines are AddEmptyLineBetweenElements'
-                 * job, not this one. Text either way, so the closing tag follows the whitespace
-                 * directly rather than adding a newline and an indent on top of content the
-                 * element already carries.
-                 */
-                sb.Append(node.Value.Contains('\n') ?
-                          NewLineRuns().Replace(node.Value, Environment.NewLine) :
-                          node.Value);
+                sb.Append(node.Value);
                 _lastNodeType = XmlNodeType.Text;
 
                 return true;
@@ -1043,6 +1028,15 @@ public partial class Formatter
     /// </summary>
     private bool ContentHasStartedALine(OpenElement element) =>
         _lineBreaks > element.LineBreaksAtContentStart;
+
+    /// <summary>
+    /// Whether <paramref name="firstChild"/> is its parent's only content and spans lines. That is
+    /// layout, not content: the end tag takes a line of its own at the formatter's indent.
+    /// </summary>
+    private bool IsLineBreakBeforeEndTag(XmlNode? firstChild) =>
+        _currentOptions.PreserveNewLines
+        && firstChild is { NodeType: XmlNodeType.Whitespace, NextSibling: null, Value: { } value }
+        && value.Contains('\n');
 
     /// <summary>
     /// Writes the line break that separates <paramref name="child"/> from what precedes it,
@@ -1110,7 +1104,8 @@ public partial class Formatter
 
         // An element written whole on one line keeps its end tag on it: breaking <p>a<i /></p>
         // would push the break into character data the formatter never touched.
-        if (ContentHasStartedALine(element) && element.PreservesWhitespace is false)
+        if ((ContentHasStartedALine(element) || IsLineBreakBeforeEndTag(FirstVisibleChild(node)))
+            && element.PreservesWhitespace is false)
         {
             AppendLineBreak(sb);
             sb.Append(new string(' ', _currentStartLength));
