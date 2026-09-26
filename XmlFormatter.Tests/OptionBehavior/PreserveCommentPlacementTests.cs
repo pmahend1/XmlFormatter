@@ -107,6 +107,46 @@ public class PreserveCommentPlacementTests
         Assert.Equal("<r>\n    <!-- one --><!-- two -->\n</r>", formatted);
     }
 
+    // A line break at the end of text places the comment as a whitespace node would.
+    [Theory]
+    [MemberData(nameof(BothWays))]
+    public void True_keeps_a_comment_after_text_on_its_own_line(Options options)
+    {
+        var formatted = TestFormatter.Format("<r>a\nb\n<!--why--><a/></r>", options);
+
+        Assert.Equal("<r>\n    a\n    b\n    <!-- why -->\n    <a />\n</r>", formatted);
+    }
+
+    // This used to put the comment at column 0 and then join it onto the text on the next format (#71).
+    [Theory]
+    [MemberData(nameof(BothWays))]
+    public void True_keeps_a_blank_line_between_text_and_a_comment(Options options)
+    {
+        var once = TestFormatter.Format("<r><e>a\nb\n\n<!--why--><f/></e></r>", options);
+
+        Assert.Equal("""
+            <r>
+                <e>
+                    a
+                    b
+
+                    <!-- why -->
+                    <f />
+                </e>
+            </r>
+            """, once);
+        Assert.Equal(once, TestFormatter.Format(once, options));
+    }
+
+    [Theory]
+    [MemberData(nameof(BothWays))]
+    public void True_keeps_a_comment_on_the_line_of_the_text_before_it(Options options)
+    {
+        var formatted = TestFormatter.Format("<r>a\nb <!--why--><a/></r>", options);
+
+        Assert.Equal("<r>\n    a\n    b<!-- why -->\n    <a />\n</r>", formatted);
+    }
+
     [Theory]
     [MemberData(nameof(BothWays))]
     public void True_leaves_a_document_level_comment_unindented(Options options)

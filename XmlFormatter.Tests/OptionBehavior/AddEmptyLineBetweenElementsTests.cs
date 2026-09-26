@@ -71,6 +71,59 @@ public class AddEmptyLineBetweenElementsTests
         Assert.Equal("<r>hello</r>", formatted);
     }
 
+    // A blank line goes only before a sibling that starts a line. Before any other sibling it
+    // left that sibling at column 0 (#71).
+
+    public static TheoryData<Options> PreservingCommentPlacement =>
+    [
+        BlankLines with { PreserveCommentPlacement = true },
+        BlankLinesKeepingNewLines with { PreserveCommentPlacement = true },
+    ];
+
+    [Theory]
+    [MemberData(nameof(PreservingCommentPlacement))]
+    public void True_leaves_a_comment_kept_on_the_element_line_there(Options options)
+    {
+        var once = TestFormatter.Format("<r><a/><b/><!--why--></r>", options);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b /><!-- why -->\n</r>", once);
+        Assert.Equal(once, TestFormatter.Format(once, options));
+    }
+
+    [Theory]
+    [MemberData(nameof(PreservingCommentPlacement))]
+    public void True_separates_a_comment_kept_on_its_own_line(Options options)
+    {
+        var once = TestFormatter.Format("<r><a/><b/>\n<!--why--></r>", options);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b />\n\n    <!-- why -->\n</r>", once);
+        Assert.Equal(once, TestFormatter.Format(once, options));
+    }
+
+    [Fact]
+    public void True_leaves_cdata_after_an_element_on_its_line()
+    {
+        var formatted = TestFormatter.Format("<r><a/><b/><![CDATA[raw]]></r>", BlankLines);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b /><![CDATA[raw]]>\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_leaves_an_entity_reference_after_an_element_on_its_line()
+    {
+        var formatted = TestFormatter.Format("<!DOCTYPE r [<!ENTITY e \"x\">]><r><a/><b/>&e;</r>", BlankLines);
+
+        Assert.Equal("<!DOCTYPE r [<!ENTITY e \"x\">]>\n<r>\n    <a />\n\n    <b />&e;\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_separates_a_processing_instruction_after_an_element()
+    {
+        var formatted = TestFormatter.Format("<r><a/><b/><?p?></r>", BlankLines);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b />\n\n    <?p?>\n</r>", formatted);
+    }
+
     /*
      * The same three contracts again, on input that carries indentation. Those Whitespace nodes
      * are regenerated rather than written, so counting them read n children as 2n + 1 and the
@@ -105,6 +158,14 @@ public class AddEmptyLineBetweenElementsTests
         var formatted = TestFormatter.Format("<r>\n    <a />\n\n    <b />\n\n    <c />\n</r>", BlankLinesKeepingNewLines);
 
         Assert.Equal("<r>\n    <a />\n\n    <b />\n\n    <c />\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_with_preserved_new_lines_separates_cdata_on_its_own_line()
+    {
+        var formatted = TestFormatter.Format("<r>\n    <a />\n    <b />\n    <![CDATA[raw]]>\n</r>", BlankLinesKeepingNewLines);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b />\n\n    <![CDATA[raw]]>\n</r>", formatted);
     }
 
     [Fact]
