@@ -38,6 +38,9 @@ public class Formatter
 
     private const string XmlSpaceAttributeName = "xml:space";
 
+    // XML 1.0 section 2.3. char.IsWhiteSpace would also take NBSP, which is content.
+    private const string XmlWhitespace = " \t\r\n";
+
     private static readonly XmlWriterSettings MinimizeSettings = new()
     {
         Indent = false,
@@ -260,9 +263,7 @@ public class Formatter
 
             for (var child = parent.FirstChild; child is not null; previous = child, child = child.NextSibling)
             {
-                if (child.NodeType is XmlNodeType.Comment
-                    && previous is { NodeType: XmlNodeType.Whitespace, Value: not null }
-                    && previous.Value.Contains('\n'))
+                if (child.NodeType is XmlNodeType.Comment && EndsInLineBreak(previous))
                 {
                     ownLineComments.Add(child);
                 }
@@ -338,12 +339,15 @@ public class Formatter
     /// Adjacent whitespace is always one node, so this steps over at most one. Forward only:
     /// <see cref="XmlLinkedNode.PreviousSibling"/> rescans the parent from its first child (#46).
     /// </remarks>
-    private XmlNode? NextWrittenSibling(XmlNode node)
+    /// <param name="previousSibling"><paramref name="node"/>, or the whitespace stepped over.</param>
+    private XmlNode? NextWrittenSibling(XmlNode node, out XmlNode previousSibling)
     {
+        previousSibling = node;
         var sibling = NextVisibleSibling(node);
 
         while (sibling is not null && IsStructuralWhitespace(sibling))
         {
+            previousSibling = sibling;
             sibling = NextVisibleSibling(sibling);
         }
 
@@ -383,9 +387,21 @@ public class Formatter
          * steps over that whitespace and the answer was taken at load instead.
          */
         return _currentOptions.PreserveNewLines ?
-               previousSibling is { NodeType: XmlNodeType.Whitespace, Value: not null }
-               && previousSibling.Value.Contains('\n') :
+               EndsInLineBreak(previousSibling) :
                _ownLineComments.Contains(comment);
+    }
+
+    /// <summary>Whether a line break follows the last non-whitespace character of <paramref name="node"/>.</summary>
+    private static bool EndsInLineBreak(XmlNode? node)
+    {
+        if (node is not { NodeType: XmlNodeType.Whitespace or XmlNodeType.Text, Value: { } value })
+        {
+            return false;
+        }
+
+        var lastVisible = value.AsSpan().TrimEnd(XmlWhitespace).Length;
+
+        return value.AsSpan(lastVisible).Contains('\n');
     }
 
     /// <summary>
@@ -1044,26 +1060,22 @@ public class Formatter
     /// </summary>
     private void WriteSeparatorBeforeChild(XmlNode child, StringBuilder sb, XmlNode? previousChild)
     {
-        /*
-         * A comment that shared a line with what came before it keeps doing so - that is the
-         * whole of PreserveCommentPlacement, and the previous node type is no way to tell: a
-         * comment first under its parent, or after text or another comment, shared the line too
-         * and used to be broken onto a new one with no indent, against the left margin.
-         */
-        var commentKeepsItsLine = child.NodeType is XmlNodeType.Comment
-                                  && _currentOptions.PreserveCommentPlacement
-                                  && StartsItsOwnLine(child, previousChild) is false;
-
         if (child.NodeType is not (XmlNodeType.Text or XmlNodeType.CDATA
                                  or XmlNodeType.EntityReference
                                  or XmlNodeType.SignificantWhitespace
                                  or XmlNodeType.Whitespace)
             && _lastNodeType is not XmlNodeType.Text
-            && commentKeepsItsLine is false)
+            && CommentKeepsItsLine(child, previousChild) is false)
         {
             AppendLineBreak(sb);
         }
     }
+
+    /// <summary>Whether <paramref name="child"/> is a comment kept on the line of what precedes it.</summary>
+    private bool CommentKeepsItsLine(XmlNode child, XmlNode? previousChild) =>
+        child.NodeType is XmlNodeType.Comment
+        && _currentOptions.PreserveCommentPlacement
+        && StartsItsOwnLine(child, previousChild) is false;
 
     /// <summary>
     /// Applies <see cref="Options.AddEmptyLineBetweenElements"/> to the child whose subtree has
@@ -1071,17 +1083,34 @@ public class Formatter
     /// </summary>
     private void WriteBlankLineAfterChild(XmlNode child, StringBuilder sb, int childCount)
     {
-        var nextSibling = NextWrittenSibling(child);
+        var nextSibling = NextWrittenSibling(child, out var nodeBeforeNextSibling);
 
         if (_currentOptions.AddEmptyLineBetweenElements
             && child.NodeType is XmlNodeType.Element
-            && nextSibling?.NodeType is not (XmlNodeType.Text or XmlNodeType.SignificantWhitespace)
             && childCount > 2
-            && nextSibling is not null)
+            && nextSibling is not null
+            && StartsALineAfterElement(nextSibling, nodeBeforeNextSibling))
         {
             AppendLineBreak(sb);
         }
     }
+
+    /// <summary>Whether <paramref name="sibling"/> starts a new line when it follows an element.</summary>
+    /// <param name="previousSibling">The element, or the whitespace after it that PreserveNewLines keeps.</param>
+    private bool StartsALineAfterElement(XmlNode sibling, XmlNode previousSibling) =>
+        sibling.NodeType switch
+        {
+            XmlNodeType.Text or
+            XmlNodeType.SignificantWhitespace or
+            XmlNodeType.EntityReference => false,
+
+            // Must match the CDATA rule in TryWriteLeafNode.
+            XmlNodeType.CDATA => previousSibling.NodeType is not (XmlNodeType.Text or XmlNodeType.Element),
+
+            XmlNodeType.Comment => CommentKeepsItsLine(sibling, previousSibling) is false,
+
+            _ => true
+        };
 
     /// <summary>Closes a node whose children have all been written, and unwinds its indent.</summary>
     private void WriteClosingTag(OpenElement element, StringBuilder sb)
