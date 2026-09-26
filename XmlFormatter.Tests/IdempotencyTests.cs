@@ -88,6 +88,28 @@ public class IdempotencyTests
         Assert.Equal(once, TestFormatter.Format(once, options));
     }
 
+    [Theory]
+    [InlineData("<r><a>\n</a></r>")]
+    [InlineData("<r><a>\n\n</a></r>")]
+    [InlineData("<r><a>\n </a></r>")]
+    [InlineData("<r><a> </a></r>")]
+    public void Sole_whitespace_in_a_nested_element_settles_after_one_pass(string xml)
+    {
+        var options = TestOptions.NoDeclaration with { PreserveNewLines = true };
+
+        var once = TestFormatter.Format(xml, options);
+
+        Assert.Equal(once, TestFormatter.Format(once, options));
+    }
+
+    [Fact]
+    public void A_blank_line_inside_text_settles_after_one_pass()
+    {
+        var once = TestFormatter.Format("<r><p>y z\n\n </p></r>", TestOptions.NoDeclaration);
+
+        Assert.Equal(once, TestFormatter.Format(once, TestOptions.NoDeclaration));
+    }
+
     /// <summary>
     /// After text the separator opens no line, so the indent landed in the text node's own
     /// character data and came back as text on the next pass - one space beside a comment

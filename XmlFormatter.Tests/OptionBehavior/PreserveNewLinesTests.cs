@@ -42,11 +42,31 @@ public class PreserveNewLinesTests
     }
 
     [Fact]
-    public void True_keeps_whitespace_that_spans_lines_as_the_only_content()
+    public void True_keeps_whitespace_without_a_line_break_as_nested_content()
+    {
+        var formatted = TestFormatter.Format("<r><a> </a></r>", Preserving);
+
+        Assert.Equal("<r>\n    <a> </a>\n</r>", formatted);
+    }
+
+    [Theory]
+    [InlineData("<r><a>\n</a></r>")]
+    [InlineData("<r><a>\n\n</a></r>")]
+    [InlineData("<r><a>\n </a></r>")]
+    public void True_puts_the_end_tag_after_sole_whitespace_spanning_lines_at_its_own_indent(string xml)
+    {
+        // The source's trailing spaces used to decide the end tag's column.
+        var formatted = TestFormatter.Format(xml, Preserving);
+
+        Assert.Equal("<r>\n    <a>\n    </a>\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_drops_the_indent_of_sole_whitespace_spanning_lines_at_the_root()
     {
         var formatted = TestFormatter.Format("<r>\n  </r>", Preserving);
 
-        Assert.Equal("<r>\n  </r>", formatted);
+        Assert.Equal("<r>\n</r>", formatted);
     }
 
     [Fact]
