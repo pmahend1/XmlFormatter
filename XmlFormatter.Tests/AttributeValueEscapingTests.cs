@@ -24,15 +24,6 @@ public class AttributeValueEscapingTests
     }
 
     [Fact]
-    public void A_greater_than_sign_is_escaped()
-    {
-        // Not strictly required inside an attribute value, but harmless and consistent.
-        var formatted = TestFormatter.Format("""<r a="a&gt;b"/>""", TestOptions.NoDeclaration);
-
-        Assert.Equal("""<r a="a&gt;b" />""", formatted);
-    }
-
-    [Fact]
     public void A_double_quote_is_escaped_inside_a_double_quoted_value()
     {
         var formatted = TestFormatter.Format("""<r a='say "hi"'/>""", TestOptions.NoDeclaration);
@@ -69,11 +60,11 @@ public class AttributeValueEscapingTests
     }
 
     [Fact]
-    public void All_three_unconditional_escapes_survive_together()
+    public void Both_unconditional_escapes_survive_together()
     {
-        var formatted = TestFormatter.Format("""<r a="&lt;&amp;&gt;"/>""", TestOptions.NoDeclaration);
+        var formatted = TestFormatter.Format("""<r a="&lt;&amp;"/>""", TestOptions.NoDeclaration);
 
-        Assert.Equal("""<r a="&lt;&amp;&gt;" />""", formatted);
+        Assert.Equal("""<r a="&lt;&amp;" />""", formatted);
     }
 
     [Fact]

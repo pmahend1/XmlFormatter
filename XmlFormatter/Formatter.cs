@@ -72,8 +72,8 @@ public class Formatter
     }
 
     /// <summary>
-    /// Single-pass XML attribute value escaper. Encodes &amp; &lt; &gt; and whichever quote
-    /// delimits the value, plus the apostrophe when <paramref name="escapeApostrophe"/> asks;
+    /// Single-pass XML attribute value escaper. Encodes &amp; &lt; and whichever quote delimits
+    /// the value, plus &gt; and the apostrophe when asked;
     /// with <paramref name="escapeWhitespace"/>, also encodes tab, newline and carriage return,
     /// and with <paramref name="escapeInvisibleNonAscii"/> the invisible characters above ASCII.
     /// Everything else is written as itself. O(n), no string scans.
@@ -98,6 +98,7 @@ public class Formatter
     private static string EscapeXmlValue(string value,
                                          bool escapeWhitespace,
                                          bool useSingleQuotes,
+                                         bool escapeGreaterThan,
                                          bool escapeApostrophe,
                                          bool escapeInvisibleNonAscii)
     {
@@ -113,7 +114,7 @@ public class Formatter
                 case '<':
                     sb.Append("&lt;");
                     break;
-                case '>':
+                case '>' when escapeGreaterThan:
                     sb.Append("&gt;");
                     break;
                 case '"' when !useSingleQuotes:
@@ -740,6 +741,7 @@ public class Formatter
                 var attributeValue = EscapeXmlValue(attribute.Value,
                                                     escapeWhitespace: _currentOptions.AllowWhiteSpaceUnicodesInAttributeValues,
                                                     useSingleQuotes: _currentOptions.UseSingleQuotes,
+                                                    escapeGreaterThan: _currentOptions.AllowWhiteSpaceUnicodesInAttributeValues is false,
                                                     escapeApostrophe: _currentOptions.AllowSingleQuoteInAttributeValue is false,
                                                     escapeInvisibleNonAscii: _currentOptions.EscapeInvisibleNonAsciiCharacters);
 
