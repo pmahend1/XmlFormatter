@@ -1078,26 +1078,43 @@ public class Formatter
         && StartsItsOwnLine(child, previousChild) is false;
 
     /// <summary>
-    /// Applies <see cref="Options.AddEmptyLineBetweenElements"/> to the child whose subtree has
-    /// just been written.
+    /// Writes one blank line after the child whose subtree has just been written, when
+    /// <see cref="Options.AddEmptyLineBetweenElements"/> asks for it,
+    /// <see cref="Options.PreserveNewLines"/> finds one in the source, or both.
     /// </summary>
     private void WriteBlankLineAfterChild(XmlNode child, StringBuilder sb, int childCount)
     {
+        if (IsStructuralWhitespace(child))
+        {
+            return;
+        }
+
         var nextSibling = NextWrittenSibling(child, out var nodeBeforeNextSibling);
 
-        if (_currentOptions.AddEmptyLineBetweenElements
-            && child.NodeType is XmlNodeType.Element
-            && childCount > 2
-            && nextSibling is not null
-            && StartsALineAfterElement(nextSibling, nodeBeforeNextSibling))
+        if (nextSibling is null || StartsALineAfter(nextSibling, nodeBeforeNextSibling) is false)
+        {
+            return;
+        }
+
+        var addsBlankLine = _currentOptions.AddEmptyLineBetweenElements
+                            && child.NodeType is XmlNodeType.Element
+                            && childCount > 2;
+
+        if (addsBlankLine || HoldsABlankLine(nodeBeforeNextSibling))
         {
             AppendLineBreak(sb);
         }
     }
 
-    /// <summary>Whether <paramref name="sibling"/> starts a new line when it follows an element.</summary>
-    /// <param name="previousSibling">The element, or the whitespace after it that PreserveNewLines keeps.</param>
-    private bool StartsALineAfterElement(XmlNode sibling, XmlNode previousSibling) =>
+    /// <summary>Whether <paramref name="node"/> is whitespace holding a blank line that <see cref="Options.PreserveNewLines"/> keeps.</summary>
+    private bool HoldsABlankLine(XmlNode node) =>
+        _currentOptions.PreserveNewLines
+        && node is { NodeType: XmlNodeType.Whitespace, Value: { } value }
+        && value.AsSpan().Count('\n') >= 2;
+
+    /// <summary>Whether <paramref name="sibling"/> starts a new line after <paramref name="previousSibling"/>.</summary>
+    /// <param name="previousSibling">The child just written, or the whitespace after it that PreserveNewLines keeps.</param>
+    private bool StartsALineAfter(XmlNode sibling, XmlNode previousSibling) =>
         sibling.NodeType switch
         {
             XmlNodeType.Text or

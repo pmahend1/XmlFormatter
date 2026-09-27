@@ -2,7 +2,8 @@ namespace XmlFormatter.Tests.OptionBehavior;
 
 /// <summary>
 /// Loads with PreserveWhitespace, but structural indentation is still regenerated (#209), so
-/// the visible effect is narrow: only whitespace that is an element's sole content survives.
+/// the visible effect is narrow: whitespace that is an element's sole content survives, and a
+/// blank line between two siblings survives as exactly one (#74).
 /// </summary>
 public class PreserveNewLinesTests
 {
@@ -72,25 +73,84 @@ public class PreserveNewLinesTests
     [Fact]
     public void True_collapses_a_run_of_newlines_in_whitespace_only_content()
     {
-        // Blank lines are AddEmptyLineBetweenElements' job, not this option's.
+        // Sole whitespace spanning lines is layout (#69), and a blank line needs a sibling each side.
         var formatted = TestFormatter.Format("<r>\n\n\n</r>", Preserving);
 
         Assert.Equal("<r>\n</r>", formatted);
     }
 
-    [Fact]
-    public void True_still_regenerates_indentation_between_elements()
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void True_keeps_a_blank_line_between_siblings_as_exactly_one(string newLine)
     {
-        // The blank lines in the input are structural, and structural whitespace is rebuilt.
-        // AddEmptyLineBetweenElements is the option that puts blank lines back.
-        var formatted = TestFormatter.Format("<r>\n  <a/>\n\n\n  <b/>\n</r>", Preserving);
+        // The PrettyXML README's example input for this option.
+        var input = """
+            <Root>
+                  <Element1>Text1</Element1>
+
+
+                <Element2>Text2</Element2>
+
+                    <Element3>Text3</Element3>
+                <Element3>Text4</Element3>
+            </Root>
+            """.Replace("\n", newLine);
+
+        var formatted = TestFormatter.Format(input, Preserving);
 
         Assert.Equal("""
-            <r>
-                <a />
-                <b />
-            </r>
+            <Root>
+                <Element1>Text1</Element1>
+
+                <Element2>Text2</Element2>
+
+                <Element3>Text3</Element3>
+                <Element3>Text4</Element3>
+            </Root>
             """, formatted);
+    }
+
+    [Fact]
+    public void True_writes_no_indent_on_the_blank_line()
+    {
+        var formatted = TestFormatter.Format("<r>\n  <a/>\n  \n\t\n  <b/>\n</r>", Preserving);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b />\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_drops_a_blank_line_after_the_start_tag_or_before_the_end_tag()
+    {
+        var formatted = TestFormatter.Format("<r>\n\n    <a/>\n\n    <b/>\n\n</r>", Preserving);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b />\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_keeps_a_blank_line_before_a_comment()
+    {
+        var formatted = TestFormatter.Format("<r>\n    <a/>\n\n    <!-- note -->\n    <b/>\n</r>", Preserving);
+
+        Assert.Equal("<r>\n    <a />\n\n    <!-- note -->\n    <b />\n</r>", formatted);
+    }
+
+    [Fact]
+    public void True_keeps_a_blank_line_around_a_processing_instruction_and_cdata()
+    {
+        const string xml = "<r>\n    <a />\n\n    <?pi x?>\n\n    <![CDATA[c]]>\n\n    <b />\n</r>";
+
+        var formatted = TestFormatter.Format(xml, Preserving);
+
+        Assert.Equal(xml, formatted);
+    }
+
+    [Fact]
+    public void False_drops_a_blank_line_between_siblings()
+    {
+        var formatted = TestFormatter.Format("<r>\n    <a/>\n\n    <b/>\n</r>", TestOptions.NoDeclaration);
+
+        Assert.Equal("<r>\n    <a />\n    <b />\n</r>", formatted);
     }
 
     [Fact]
