@@ -102,6 +102,19 @@ public class IdempotencyTests
         Assert.Equal(once, TestFormatter.Format(once, options));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_blank_line_between_siblings_settles_after_one_pass(bool addEmptyLineBetweenElements)
+    {
+        var options = TestOptions.NoDeclaration with { PreserveNewLines = true,
+                                                       AddEmptyLineBetweenElements = addEmptyLineBetweenElements };
+
+        var once = TestFormatter.Format("<r>\n  <a/>\n\n\n  <b/>\n  <!--c-->\n\n  <d/>\n</r>", options);
+
+        Assert.Equal(once, TestFormatter.Format(once, options));
+    }
+
     [Fact]
     public void A_blank_line_inside_text_settles_after_one_pass()
     {

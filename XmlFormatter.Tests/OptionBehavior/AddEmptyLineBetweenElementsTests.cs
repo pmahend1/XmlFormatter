@@ -169,6 +169,15 @@ public class AddEmptyLineBetweenElementsTests
     }
 
     [Fact]
+    public void True_with_preserved_new_lines_writes_one_blank_line_where_the_source_already_had_one()
+    {
+        // Both options ask for the blank line between a and b; it is still written once (#74).
+        var formatted = TestFormatter.Format("<r>\n    <a/>\n\n    <b/>\n    <c/>\n</r>", BlankLinesKeepingNewLines);
+
+        Assert.Equal("<r>\n    <a />\n\n    <b />\n\n    <c />\n</r>", formatted);
+    }
+
+    [Fact]
     public void True_with_preserved_new_lines_leaves_a_single_child_alone()
     {
         var formatted = TestFormatter.Format("<r>\n    <a />\n</r>", BlankLinesKeepingNewLines);
