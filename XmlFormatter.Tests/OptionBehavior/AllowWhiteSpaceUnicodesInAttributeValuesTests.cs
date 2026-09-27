@@ -9,6 +9,8 @@ namespace XmlFormatter.Tests.OptionBehavior;
 /// the document back. Written literally they are silently lost, so escaping them is what makes
 /// the round-trip lossless - which is why the option defaults to true.
 ///
+/// It also keeps the greater-than sign literal when true, for SAPUI5 bindings (PrettyXML #131).
+///
 /// Printable non-ASCII has no such problem and is never escaped by this option. It once was,
 /// which is what broke umlauts in #216; TextContentEncodingTests carries the rest of that
 /// regression cover.
@@ -61,6 +63,43 @@ public class AllowWhiteSpaceUnicodesInAttributeValuesTests
         var formatted = TestFormatter.Format("""<r a="col1&#x9;col2"/>""", options);
 
         Assert.Equal("<r a=\"col1\tcol2\" />", formatted);
+    }
+
+    [Fact]
+    public void True_by_default_leaves_a_greater_than_sign_literal()
+    {
+        var formatted = TestFormatter.Format("""<r a="a&gt;b"/>""", TestOptions.NoDeclaration);
+
+        Assert.Equal("""<r a="a>b" />""", formatted);
+    }
+
+    [Fact]
+    public void False_escapes_a_greater_than_sign()
+    {
+        var options = TestOptions.NoDeclaration with { AllowWhiteSpaceUnicodesInAttributeValues = false };
+
+        var formatted = TestFormatter.Format("""<r a="a>b"/>""", options);
+
+        Assert.Equal("""<r a="a&gt;b" />""", formatted);
+    }
+
+    [Fact]
+    public void True_by_default_leaves_sapui5_expression_bindings_as_written()
+    {
+        const string view = """
+                            <View>
+                                <Content>
+                                    <Label text="{i18n>LabelText}" />
+                                    <Input id="Input1"
+                                           value="{service>description}" />
+                                </Content>
+                            </View>
+                            """;
+
+        var formatted = TestFormatter.Format(view, TestOptions.NoDeclaration);
+
+        Assert.Equal(view, formatted);
+        Assert.Equal(formatted, TestFormatter.Format(formatted, TestOptions.NoDeclaration));
     }
 
     [Fact]

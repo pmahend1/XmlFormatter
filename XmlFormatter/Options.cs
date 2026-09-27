@@ -25,7 +25,10 @@ public record struct Options()
     /// round-trip otherwise: XML attribute-value normalization (XML 1.0 section 3.3.3) replaces
     /// each of them with a space when the document is read back.
     ///
-    /// All three are ASCII, so this option and <see cref="EscapeInvisibleNonAsciiCharacters"/>
+    /// Also keeps &gt; literal, so SAPUI5 bindings like <c>{i18n>LabelText}</c> survive
+    /// (PrettyXML #131); off, it is escaped.
+    ///
+    /// All four are ASCII, so this option and <see cref="EscapeInvisibleNonAsciiCharacters"/>
     /// never decide the same character - see the note there.
     /// </summary>
     public bool AllowWhiteSpaceUnicodesInAttributeValues { get; init; } = true;
